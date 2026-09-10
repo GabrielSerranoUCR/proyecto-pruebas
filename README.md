@@ -18,3 +18,6 @@ El objetivo del proyecto es someter la aplicación a un proceso de pruebas, apli
 ## Instrucciones para ejecutar el proyecto
 
 ## Estructura del repositorio.
+
+## Enlaces de interes
+- [Plan de trabajo](https://docs.google.com/spreadsheets/d/1IGmu08bjfda4OAQALcscwWfYLhLuleYi6xQ7R213txM/edit?usp=sharing)
