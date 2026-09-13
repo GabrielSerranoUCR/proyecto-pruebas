@@ -64,6 +64,14 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   ```
 
 ## Estructura del repositorio.
+- `README.md`: documentación del proyecto.
+- `pyproject.toml` / `uv.lock`: dependencias del proyecto (ver nota abajo).
+- `src/`: código fuente de la aplicación.
+- `tests/`: pruebas automatizadas (pytest).
+- `docs/`: documentación adicional del proyecto.
+- `evidencias/`: evidencia del plan de pruebas, diseño de pruebas, instalación y verificación del ambiente.
+
+**Nota sobre requirements.txt:** el proyecto usa `uv` como gestor de dependencias, por lo que no se incluye un `requirements.txt`. Las dependencias se declaran en `pyproject.toml` y quedan fijadas en `uv.lock`, que cumple el mismo propósito.
 
 ## Enlaces de interes
 - [Plan de trabajo](https://docs.google.com/spreadsheets/d/1IGmu08bjfda4OAQALcscwWfYLhLuleYi6xQ7R213txM/edit?usp=sharing)
