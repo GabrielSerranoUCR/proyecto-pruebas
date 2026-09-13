@@ -8,7 +8,7 @@ La siguiente aplicación es un sistema de ...
 - Gabriel Serrano Rojas | C17497
 - Juan José Víquez Ríos | C38567
 - Josué Torres Sibaja | C37853
-- Rolando Villavicencio Gonzales | C28489
+- Rolando Villavicencio González | C28489
 
 ## Objetivo del proyecto
 El objetivo del proyecto es someter la aplicación a un proceso de pruebas, aplicando de forma práctica los conocimientos, estándares, modelos y herramientas de las pruebas de software. Esto incluye principios de pruebas, gestión del proceso de pruebas, verificación y validación, entre otros conceptos clave para evaluar y garantizar la calidad del sistema.
