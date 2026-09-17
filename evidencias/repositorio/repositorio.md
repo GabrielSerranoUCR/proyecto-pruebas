@@ -1,18 +1,17 @@
-## Evidencia del repositorio
-
-Captura:
-
-Explicación:
-
 ### Dirección del repositorio
 
-Captura:
+**URL:**
+<br>
+[Elance al repositorio](https://github.com/GabrielSerranoUCR/proyecto-pruebas/tree/main)
 
-Explicación:
+**Explicación:**
+<br>
+URL a un repositorio remoto en github.
+
 ### Estructura
 
-**Captura:**
-
+**Diagrama:**
+<br>
 ```text
 proyecto-pruebas/
 ├── docs/
@@ -42,6 +41,7 @@ Por otro lado, la carpeta de evidencia se descompone en carpetas específicas pa
 ![texto alternativo](./archivos_init.png)
 
 **Explicación:**
+<br>
 Los archivos iniciales son específicamente archivos git y archivos relacionados a UV, que se generan automáticamente, necesarios para que el ambiente funcione.
 
 ### Commits realizados
