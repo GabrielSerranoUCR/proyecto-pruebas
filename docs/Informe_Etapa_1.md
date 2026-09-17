@@ -412,6 +412,9 @@ Se realiza una operación de prueba (select) sobre la tabla "users_test" en Supa
 
 ## Conclusiones
 
+- Se aprende que antes de empezar a probar hay que tener bien claro qué se va a probar y cómo, porque si no se pierde mucho tiempo después. Armar el plan y el diseño nos ayudó a ordenar las ideas.
+- Montar el ambiente de pruebas en un entorno nuevo y más eficiente cómo uv nos permitió tener un ambiente de pruebas más controlado y reproducible, lo que es muy importante para poder hacer pruebas confiables.
+
 
 
 ## Referencias
