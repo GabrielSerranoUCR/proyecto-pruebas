@@ -3,12 +3,27 @@
 
 # Universidad de Costa Rica
 
+<br>
+<br>
+
 ### Pruebas de software
 
+<br>
+<br>
 <br>
 
 ## Informe: Etapa 1
 
+<br>
+<br>
+<br>
+
+**Docente:**
+<br>
+Minor Sandí Salazar 
+
+<br>
+<br>
 <br>
 
 **Integrantes:**
@@ -24,16 +39,43 @@ Josué Torres Sibaja | C37853
 Rolando Villavicencio Gonzales | C28489
 
 <br>
+<br>
+<br>
 
 **Año:**
 <br>
 2026
 
+<br>
+<br>
+<br>
+
 </div>
+
+<hr>
+
+<br>
+<br>
+<br>
+<br>
+<br>
 
 ## Introducción
 
+En el siguiente documento se presenta la primera etapa del proyecto de
+pruebas de software, cuyo propósito es establecer las bases para evaluar la
+calidad de una solución que integra modelos de aprendizaje automático,
+servicios de API, una interfaz de usuario y persistencia de datos.
 
+La solución contempla tres modelos:
+riesgo de diabetes, monto de préstamo y riesgo académico.
+
+Durante esta etapa se documentan la estructura inicial del repositorio, el
+plan de trabajo, el alcance inicial de las pruebas y el diseño de
+los casos iniciales de pruebas.
+
+Además, se describe la instalación y verificación del ambiente de pruebas,
+incluyendo Python, las dependencias administradas mediante `uv`, la ejecución de pruebas con `pytest` mediante `uv`, el análisis estático con `Pylint` mediante `uv` y la conexión con Supabase.
 
 ## Objetivos
 
@@ -43,13 +85,45 @@ El objetivo del proyecto es someter la aplicación a un proceso de pruebas, apli
 
 **Problema a abordar:**
 <br>
-Asegurar la calidad del código por medio de pruebas
+Aplicación de pruebas de software para asegurar la calidad sobre una solución que integra modelos de aprendizaje automático.
 
 **Funcionalidades a probar:**
 <br>
+- Selección del modelo y despliegue del formulario correspondiente a sus
+  parámetros.
+- Captura de los parámetros de entrada de cada modelo.
+- Validación de las entradas escritas en la página web, antes de enviar la
+  solicitud a la API.
+- Presentación del resultado.
+- Manejo y presentación de los errores devueltos por la API.
+- Validación del contrato de entrada por modelo, independiente de la
+  validación hecha en la interfaz.
+- Invocación del modelo correspondiente según la ruta/endpoint solicitado.
+- Devolución de la respuesta con la estructura del contrato: fecha, hora,
+  modelo, predicción, métrica e id_ejecucion.
+- Manejo de errores con los códigos HTTP correspondientes.
+- Seguridad básica de las rutas expuestas: entradas maliciosas y exposición
+  de información sensible.
+- Cálculo de la predicción para cada uno de los tres modelos.
+- Manejo de valores extremos o inesperados.
+- Precisión numérica del resultado, incluyendo el redondeo (en particular
+  para M08, que devuelve un monto).
+- Almacenamiento de la ejecución y su resultado.
+- Consulta del historial de ejecuciones almacenado.
+- Comportamiento del sistema cuando la base de datos no está disponible.
+- Pruebas de carga o rendimiento bajo volumen alto de solicitudes.
+- Autenticación y autorización de usuarios.
+- Despliegue en un ambiente de producción.
+- Automatización de pruebas de UI end-to-end (por ahora se contemplan
+  pruebas manuales de usabilidad).
+- El desarrollo se encuentra en fase inicial: solo el esqueleto del
+  repositorio y el ambiente están configurados. La API, el UI y los tres
+  modelos aún no están implementados, por lo que este diseño es preliminar y
+  se refinará en las siguientes etapas.
 
 **Alcance inicial:**
 <br>
+En esta etapa se documenta la estructura inicial del repositorio, el plan de trabajo, el plan inicial de pruebas y el diseño de los casos iniciales de pruebas. Además, se describe la instalación y verificación del ambiente de pruebas, la ejecución de pruebas, el análisis estático, todo lo anterior mediante la herramienta `uv`, y finalemente la conexión con Supabase.
 
 ## Repositorio Git
 
@@ -101,7 +175,9 @@ Los archivos iniciales son específicamente archivos git y archivos relacionados
 
 ### Commits realizados
 
-Se pueden visualizar en el repositorio
+Se pueden visualizar en el repositorio, por medio del siguiente enlace directamente:
+
+[Ver commits y estadísticas](https://github.com/GabrielSerranoUCR/proyecto-pruebas/pulse)
 
 ## Plan de Trabajo
 
@@ -314,7 +390,7 @@ Los defectos se clasificarán por **severidad** (impacto técnico) y
 
 ## Diseño inicial de Pruebas
 
-[Ver evidencia del Diseño incial de pruebas](../evidencias/diseño_de_pruebas/diseño_de_pruebas.md)
+**Pendiente**
 
 ## Instalación del ambiente de Pruebas
 
@@ -415,6 +491,7 @@ Se realiza una operación de prueba (select) sobre la tabla "users_test" en Supa
 - Se aprende que antes de empezar a probar hay que tener bien claro qué se va a probar y cómo, porque si no se pierde mucho tiempo después. Armar el plan y el diseño nos ayudó a ordenar las ideas.
 - Montar el ambiente de pruebas en un entorno nuevo y más eficiente cómo uv nos permitió tener un ambiente de pruebas más controlado y reproducible, lo que es muy importante para poder hacer pruebas confiables.
 
-
-
 ## Referencias
+
+- https://www.youtube.com/watch?v=VKiR6xBtWIQ
+- https://supabase.com/docs
