@@ -17,17 +17,21 @@ Supabase/PostgreSQL.
 ### Funcionalidades objeto de prueba
 
 #### Interfaz
+- Selección del modelo y despliegue del formulario correspondiente a sus
+  parámetros.
 - Captura de los parámetros de entrada de cada modelo.
 - Validación de las entradas escritas en la página web, antes de enviar la
   solicitud a la API.
-- Presentación del resultado y de los mensajes de error.
+- Presentación del resultado.
+- Manejo y presentación de los errores devueltos por la API.
 
 #### API
 - Validación del contrato de entrada por modelo, independiente de la
   validación hecha en la interfaz.
 - Invocación del modelo correspondiente según la ruta/endpoint solicitado.
-- Devolución de la predicción y de los códigos de error en el formato
-  acordado.
+- Devolución de la respuesta con la estructura del contrato: fecha, hora,
+  modelo, predicción, métrica e id_ejecucion.
+- Manejo de errores con los códigos HTTP correspondientes.
 - Seguridad básica de las rutas expuestas: entradas maliciosas y exposición
   de información sensible.
 
@@ -40,6 +44,7 @@ Supabase/PostgreSQL.
 #### Base de datos
 - Almacenamiento de la ejecución y su resultado.
 - Consulta del historial de ejecuciones almacenado.
+- Comportamiento del sistema cuando la base de datos no está disponible.
 
 ### Fuera de alcance
 - Pruebas de carga o rendimiento bajo volumen alto de solicitudes.
