@@ -8,7 +8,7 @@ La siguiente aplicación es un sistema de ...
 - Gabriel Serrano Rojas | C17497
 - Juan José Víquez Ríos | C38567
 - Josué Torres Sibaja | C37853
-- Rolando Villavicencio Gonzales | C28489
+- Rolando Villavicencio González | C28489
 
 ## Objetivo del proyecto
 El objetivo del proyecto es someter la aplicación a un proceso de pruebas, aplicando de forma práctica los conocimientos, estándares, modelos y herramientas de las pruebas de software. Esto incluye principios de pruebas, gestión del proceso de pruebas, verificación y validación, entre otros conceptos clave para evaluar y garantizar la calidad del sistema.
@@ -64,6 +64,14 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   ```
 
 ## Estructura del repositorio.
+- `README.md`: documentación del proyecto.
+- `pyproject.toml` / `uv.lock`: dependencias del proyecto (ver nota abajo).
+- `src/`: código fuente de la aplicación.
+- `tests/`: pruebas automatizadas (pytest).
+- `docs/`: documentación adicional del proyecto.
+- `evidencias/`: evidencia del plan de pruebas, diseño de pruebas, instalación y verificación del ambiente.
+
+**Nota sobre requirements.txt:** el proyecto usa `uv` como gestor de dependencias, por lo que no se incluye un `requirements.txt`. Las dependencias se declaran en `pyproject.toml` y quedan fijadas en `uv.lock`, que cumple el mismo propósito.
 
 ## Enlaces de interes
 - [Plan de trabajo](https://docs.google.com/spreadsheets/d/1IGmu08bjfda4OAQALcscwWfYLhLuleYi6xQ7R213txM/edit?usp=sharing)
