@@ -187,4 +187,3 @@ Los defectos se clasificarán por **severidad** (impacto técnico) y
 - Cobertura funcional y cobertura negativa.
 - Cantidad de defectos por severidad y por componente.
 - Porcentaje de pruebas automatizadas.
-
