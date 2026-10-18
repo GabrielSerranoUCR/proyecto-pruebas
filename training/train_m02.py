@@ -17,17 +17,22 @@ from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-def load_data(filepath: str) -> pd.DataFrame:
-    """Carga el conjunto de datos desde el archivo CSV."""
-    if not os.path.exists(filepath):
-        raise FileNotFoundError(f"No se encontró el archivo de datos en: {filepath}")
-    return pd.read_csv(filepath)
+def load_data() -> pd.DataFrame:
+    """Carga el conjunto de datos desde el archivo Excel M01-M02-M03.xlsx o CSV de respaldo."""
+    excel_path = "training/data/raw/M01-M02-M03.xlsx"
+    csv_path = "training/data/raw/m02_presion_arterial.csv"
+
+    if os.path.exists(excel_path):
+        return pd.read_excel(excel_path, sheet_name="Presión Arterial")
+    elif os.path.exists(csv_path):
+        return pd.read_csv(csv_path)
+    else:
+        raise FileNotFoundError("No se encontró el archivo de datos para Presión Arterial.")
 
 def preprocess_and_split(df: pd.DataFrame):
     """Limpia y prepara las variables predictoras y la variable objetivo."""
-    # Tratamiento de valores faltantes condicionales:
-    # Si currentSmoker == 0 y cigsPerDay es nulo, debe ser 0 cigarrillos al día.
     df = df.copy()
+    # Si la persona no fuma (currentSmoker == 0) y cigsPerDay es nulo, se imputa 0
     df.loc[(df["currentSmoker"] == 0) & (df["cigsPerDay"].isna()), "cigsPerDay"] = 0
 
     feature_cols = [
@@ -74,11 +79,11 @@ def build_pipeline(regressor, numerical_cols: list[str], binary_cols: list[str])
     ])
 
 def evaluate_models(X_train, X_test, y_train, y_test, numerical_cols, binary_cols):
-    """Entrena y evalúa los diferentes modelos candidatos con K-Fold CV y conjunto de prueba."""
+    """Entrena y evalúa los diferentes modelos candidatos."""
     candidate_regressors = {
-        "Dummy (Mean Baseline)": DummyRegressor(strategy="mean"),
+        "Dummy (Mean)": DummyRegressor(strategy="mean"),
         "Linear Regression": LinearRegression(),
-        "Ridge Regression": Ridge(alpha=1.0),
+        "Ridge": Ridge(alpha=1.0),
         "Decision Tree": RandomForestRegressor(n_estimators=1, max_depth=5, random_state=42),
         "Random Forest": RandomForestRegressor(n_estimators=100, max_depth=8, random_state=42),
         "Gradient Boosting": GradientBoostingRegressor(n_estimators=100, max_depth=3, random_state=42),
@@ -90,11 +95,8 @@ def evaluate_models(X_train, X_test, y_train, y_test, numerical_cols, binary_col
 
     for name, reg in candidate_regressors.items():
         pipe = build_pipeline(reg, numerical_cols, binary_cols)
-        
-        # Validación cruzada (R2 score)
         cv_r2 = cross_val_score(pipe, X_train, y_train, cv=kf, scoring="r2").mean()
 
-        # Entrenamiento en conjunto completo de entrenamiento
         pipe.fit(X_train, y_train)
         preds = pipe.predict(X_test)
 
@@ -106,19 +108,18 @@ def evaluate_models(X_train, X_test, y_train, y_test, numerical_cols, binary_col
         results.append({
             "Modelo": name,
             "CV R2 (5-fold)": cv_r2,
-            "MAE (mmHg)": mae,
-            "RMSE (mmHg)": rmse,
-            "R2 (Test)": r2,
+            "MAE": mae,
+            "RMSE": rmse,
+            "R2": r2,
         })
         trained_pipelines[name] = pipe
 
-    res_df = pd.DataFrame(results).sort_values("RMSE (mmHg)")
+    res_df = pd.DataFrame(results).sort_values("RMSE")
     return res_df, trained_pipelines
 
 def main():
-    data_path = "training/data/raw/m02_presion_arterial.csv"
-    print(f"[1/4] Cargando datos desde {data_path}...")
-    df = load_data(data_path)
+    print("[1/4] Cargando datos de Presión Arterial...")
+    df = load_data()
     print(f"      Dimensiones del dataset: {df.shape[0]} filas x {df.shape[1]} columnas")
 
     print("[2/4] Preparando y dividiendo datos (80% train / 20% test)...")
@@ -136,23 +137,14 @@ def main():
 
     best_model_name = res_df.iloc[0]["Modelo"]
     best_pipe = trained_pipelines[best_model_name]
-    best_metrics = res_df.iloc[0].to_dict()
 
     print(f"\n[4/4] Mejor modelo seleccionado: {best_model_name}")
     model_output_dir = "training/models"
     os.makedirs(model_output_dir, exist_ok=True)
-    model_path = os.path.join(model_output_dir, "m02_presion_arterial.joblib")
+    model_path = os.path.join(model_output_dir, "blood_pressure_ridge_model.joblib")
 
-    artifact = {
-        "model_id": "M02",
-        "description": "Presion arterial estimada (sysBP)",
-        "model_name": best_model_name,
-        "pipeline": best_pipe,
-        "feature_names": feature_cols,
-        "metrics": best_metrics,
-    }
-
-    joblib.dump(artifact, model_path)
+    # Exportamos directamente el pipeline listo para inferencia en el backend
+    joblib.dump(best_pipe, model_path)
     print(f"      Modelo exportado exitosamente en: {model_path}")
 
     # Prueba de inferencia
@@ -173,7 +165,7 @@ def main():
     }])
     pred_bp = best_pipe.predict(sample_patient)[0]
     print(f"\nVerificación de inferencia:")
-    print(f"Paciente de muestra -> Presion Arterial Sistolica Estimada: {pred_bp:.2f} mmHg")
+    print(f"Paciente de muestra -> Presión Arterial Sistólica Estimada: {pred_bp:.2f} mmHg")
 
 if __name__ == "__main__":
     main()
