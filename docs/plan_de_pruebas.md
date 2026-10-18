@@ -5,9 +5,9 @@
 **Qué se probará.** La solución mínima construida por el equipo, que integra los tres
 modelos asignados:
 
-- **M07 — Riesgo de diabetes** (Salud, clasificación binaria)
-- **M08 — Monto de préstamo** (Finanzas, regresión)
-- **M09 — Riesgo académico** (Educación, clasificación multiclase)
+- **M01 — Aprobación de curso** (Educación, clasificación binaria)
+- **M02 — Presión arterial estimada** (Salud, regresión)
+- **M03 — Riesgo de morosidad** (Finanzas, clasificación multiclase)
 
 expuestos mediante una API que valida el contrato y orquesta la
 predicción, una interfaz de usuario que captura los parámetros y
@@ -39,7 +39,7 @@ Supabase/PostgreSQL.
 - Cálculo de la predicción para cada uno de los tres modelos.
 - Manejo de valores extremos o inesperados.
 - Precisión numérica del resultado, incluyendo el redondeo (en particular
-  para M08, que devuelve un monto).
+  para M02, que devuelve un valor continuo de presión arterial).
 
 #### Base de datos
 - Almacenamiento de la ejecución y su resultado.
@@ -108,8 +108,8 @@ explícito**, sin el cual no se puede concluir si la prueba pasó o falló.
 1. **Partición de equivalencia**: agrupa valores válidos e inválidos de
    los parámetros de entrada de cada modelo (ej. edad, ingresos, notas).
 2. **Análisis de valores límite**: prueba los límites de rangos numéricos
-   relevantes (edad mínima/máxima, montos de préstamo, notas límite del
-   riesgo académico).
+   relevantes (edad mínima/máxima, notas límite de aprobación del curso,
+   ingresos declarados para el riesgo de morosidad).
 3. **Pruebas basadas en riesgo**: prioriza, entre los tres modelos, los
    flujos con mayor probabilidad o impacto de fallo.
 
@@ -153,7 +153,7 @@ explícito**, sin el cual no se puede concluir si la prueba pasó o falló.
   agregarán las del framework de API, de UI y el cliente de Supabase.
 - **Herramientas**: Git/GitHub, GitHub Issues (registro de defectos),
   Pylint (análisis estático).
-- **Datos de prueba**: datasets por modelo (M07, M08, M09), proporcionados
+- **Datos de prueba**: datasets por modelo (M01, M02, M03), proporcionados
   por el docente.
 - **Ambiente de desarrollo**: entorno virtual gestionado por `uv`
   (`.venv`), variables de entorno vía `.env`.
@@ -173,10 +173,10 @@ Los defectos se clasificarán por **severidad** (impacto técnico) y
 
 **Propósito:** confirmar que la predicción de cada modelo es confiable antes de sustentar su Go/No-Go:
 
-- M07 (riesgo de diabetes, clasificación binaria): accuracy, precision,
+- M01 (aprobación de curso, clasificación binaria): accuracy, precision,
   recall, F1.
-- M08 (monto de préstamo, regresión): MAE, MSE/RMSE, R².
-- M09 (riesgo académico, clasificación multiclase): accuracy, precision,
+- M02 (presión arterial estimada, regresión): MAE, MSE/RMSE, R².
+- M03 (riesgo de morosidad, clasificación multiclase): accuracy, precision,
   recall, F1, matriz de confusión.
 
 ### Métricas del proceso de pruebas
