@@ -1,20 +1,25 @@
-# Jupyter
+# Módulos de Entrenamiento y Modelos de Machine Learning
 
-## Instalación de Jupyter Notebook
+## Preparación del ambiente
 
-Instalar la extensión de Jupyter Notebook en VS Code. Que sea oficial de Microsoft.
-
-Para que el notebook funcione, ejecutar el siguiente comando en la terminal:
+Asegurarse de tener sincronizadas las dependencias para Jupyter y ciencia de datos:
 
 ```bash
-uv sync --group jupyter   
+uv sync --group jupyter
 ```
 
-## Configuración del kernel de Jupyter Notebook
+Se recomienda utilizar el kernel del entorno virtual `.venv` generado por `uv` al abrir los notebooks en VS Code.
 
-El archivo `pyproject.toml` ya trae las dependencias necesarias para que el notebook funcione. El comando anterior configura el entorno virtual con las dependencias requeridas. Por lo que se recomienda utilizar el entorno virtual creado con uv al seleccionar el kernel en Jupyter.
+---
 
+## Modelo M02: Presión Arterial Estimada (Regresión)
 
-## Exportar modelo
-
-Para utilizar el modelo, es necesario exportarlo. Con ejecutar el notebook `Diabetes_model.ipynb` se exportará el modelo a un archivo llamado `random_forest_model.joblib` en la carpeta `training/models/`.
+- **Dataset:** `training/data/raw/m02_presion_arterial.csv`
+- **Variable objetivo:** `sysBP` (Presión arterial sistólica en mmHg)
+- **Métricas evaluadas:** MAE, MSE / RMSE, R² (con validación cruzada K-Fold de 5 pliegues).
+- **Notebook interactivo:** `training/notebooks/M02_Blood_Pressure_model.ipynb`
+- **Script CLI directo:**
+  ```bash
+  uv run python training/train_m02.py
+  ```
+- **Artefacto exportado:** `training/models/m02_presion_arterial.joblib` (incluye preprocesador de imputación/escalado y modelo entrenado).
