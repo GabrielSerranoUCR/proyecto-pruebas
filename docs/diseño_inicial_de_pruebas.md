@@ -80,7 +80,7 @@ La selección de los datos se justifica mediante las técnicas de diseño aplica
 
 1. **Partición de equivalencia.** Se utiliza para agrupar valores de entrada que deberían producir un comportamiento equivalente. Se aplica a valores válidos e inválidos, tipos de datos, presencia de campos y categorías de salida. Produce, entre otros, CP-01, CP-02, CP-03, CP-04, CP-05, CP-10, CP-11, CP-12, CP-14 y CP-22a/22b/22c.
 
-2. **Análisis de valores límite.** Se utiliza para detectar errores asociados con límites de rangos y condiciones de frontera. Se aplica especialmente a edad y a valores extremos de entrada. Produce CP-06, CP-07, CP-23 y CP-24.
+2. **Análisis de valores límite.** Se utiliza para detectar errores asociados con límites de rangos y condiciones de frontera. Se aplica especialmente a edad mínima/máxima, notas límite de aprobación del curso, ingresos declarados para el riesgo de morosidad y valores extremos de entrada. Produce CP-06, CP-07, CP-23 y CP-24.
 
 3. **Pruebas basadas en riesgo.** Se utilizan para priorizar funcionalidades cuyo fallo tendría un impacto relevante en la solución. Se aplican a contrato de API, seguridad, cálculo de los tres modelos, persistencia, historial y comportamiento ante indisponibilidad de la base de datos. Produce CP-08, CP-09, CP-13, CP-15 a CP-21 y CP-25 a CP-28.
 
