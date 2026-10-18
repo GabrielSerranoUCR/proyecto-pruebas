@@ -5,9 +5,9 @@
 **Qué se probará.** La solución mínima construida por el equipo, que integra los tres
 modelos asignados:
 
-- **M07 — Riesgo de diabetes** (Salud, clasificación binaria)
-- **M08 — Monto de préstamo** (Finanzas, regresión)
-- **M09 — Riesgo académico** (Educación, clasificación multiclase)
+- **M01 — Aprobación de curso** (Educación, clasificación binaria)
+- **M02 — Presión arterial estimada** (Salud, regresión)
+- **M03 — Riesgo de morosidad** (Finanzas, clasificación multiclase)
 
 expuestos mediante una API que valida el contrato y orquesta la
 predicción, una interfaz de usuario que captura los parámetros y
@@ -153,7 +153,7 @@ explícito**, sin el cual no se puede concluir si la prueba pasó o falló.
   agregarán las del framework de API, de UI y el cliente de Supabase.
 - **Herramientas**: Git/GitHub, GitHub Issues (registro de defectos),
   Pylint (análisis estático).
-- **Datos de prueba**: datasets por modelo (M07, M08, M09), proporcionados
+- **Datos de prueba**: datasets por modelo (M01, M02, M03), proporcionados
   por el docente.
 - **Ambiente de desarrollo**: entorno virtual gestionado por `uv`
   (`.venv`), variables de entorno vía `.env`.
@@ -173,10 +173,10 @@ Los defectos se clasificarán por **severidad** (impacto técnico) y
 
 **Propósito:** confirmar que la predicción de cada modelo es confiable antes de sustentar su Go/No-Go:
 
-- M07 (riesgo de diabetes, clasificación binaria): accuracy, precision,
+- M01 (aprobación de curso, clasificación binaria): accuracy, precision,
   recall, F1.
-- M08 (monto de préstamo, regresión): MAE, MSE/RMSE, R².
-- M09 (riesgo académico, clasificación multiclase): accuracy, precision,
+- M02 (presión arterial estimada, regresión): MAE, MSE/RMSE, R².
+- M03 (riesgo de morosidad, clasificación multiclase): accuracy, precision,
   recall, F1, matriz de confusión.
 
 ### Métricas del proceso de pruebas
