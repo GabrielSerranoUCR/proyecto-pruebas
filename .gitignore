@@ -223,4 +223,6 @@ __marimo__/
 vscode/
 .idea/
 
+training/models/random_forest_model.joblib
 
+~$*
