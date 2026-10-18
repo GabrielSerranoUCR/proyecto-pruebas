@@ -39,7 +39,7 @@ Supabase/PostgreSQL.
 - Cálculo de la predicción para cada uno de los tres modelos.
 - Manejo de valores extremos o inesperados.
 - Precisión numérica del resultado, incluyendo el redondeo (en particular
-  para M08, que devuelve un monto).
+  para M02, que devuelve un valor continuo de presión arterial).
 
 #### Base de datos
 - Almacenamiento de la ejecución y su resultado.
@@ -108,8 +108,8 @@ explícito**, sin el cual no se puede concluir si la prueba pasó o falló.
 1. **Partición de equivalencia**: agrupa valores válidos e inválidos de
    los parámetros de entrada de cada modelo (ej. edad, ingresos, notas).
 2. **Análisis de valores límite**: prueba los límites de rangos numéricos
-   relevantes (edad mínima/máxima, montos de préstamo, notas límite del
-   riesgo académico).
+   relevantes (edad mínima/máxima, notas límite de aprobación del curso,
+   ingresos declarados para el riesgo de morosidad).
 3. **Pruebas basadas en riesgo**: prioriza, entre los tres modelos, los
    flujos con mayor probabilidad o impacto de fallo.
 
