@@ -2,7 +2,9 @@
 
 Evidencias de repositorio [aquí](/evidencias/repositorio/repositorio.md).
 
-Evidencias de instalación [aquí](/evidencias/instalacion/instalacion.md).
+Evidencias de instalación [aquí](/evidencias/instalacion_de_entorno/instalacion.md).
+
+Evidencias de configuración de Supabase [aquí](/evidencias/configuracion_supabase/instalacion.md).
 
 Evidencias de verificación [aquí](/evidencias/verificacion/verificacion.md).
 
