@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import joblib
+import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
@@ -165,6 +167,46 @@ def evaluar(pipeline, x_pru, y_pru):
     return metricas, confusion_matrix(y_pru, prediccion), tabla
 
 
+def exportar(pipeline, nombre, metricas, columnas):
+    """Guarda pipeline, columnas, cortes y metricas en un solo artefacto."""
+    RUTA_MODELO.parent.mkdir(parents=True, exist_ok=True)
+    artefacto = {
+        "model_id": "M03",
+        "description": "Nivel de riesgo de morosidad (rechazo como sustituto)",
+        "model_name": nombre,
+        "pipeline": pipeline,
+        "feature_names": list(columnas),
+        "cortes": {"medio": CORTE_MEDIO, "alto": CORTE_ALTO},
+        "niveles": list(NIVELES),
+        "metrics": {k: float(v) for k, v in metricas.items()},
+    }
+    joblib.dump(artefacto, RUTA_MODELO)
+
+
+def verificar(pipeline, x_pru):
+    """Comprobaciones con resultado esperado conocido; se detiene si alguna falla.
+
+    El artefacto recargado debe dar las mismas probabilidades que el pipeline
+    en memoria, y cada corte debe caer en el nivel documentado en el README.
+    """
+    recargado = joblib.load(RUTA_MODELO)["pipeline"]
+    misma_salida = np.allclose(
+        recargado.predict_proba(x_pru), pipeline.predict_proba(x_pru),
+    )
+    casos = {
+        0.0: "bajo",
+        CORTE_MEDIO - 0.01: "bajo",
+        CORTE_MEDIO: "medio",
+        CORTE_ALTO - 0.01: "medio",
+        CORTE_ALTO: "alto",
+        1.0: "alto",
+    }
+    fallos = {p: e for p, e in casos.items() if asignar_nivel(p) != e}
+    if not misma_salida or fallos:
+        raise AssertionError(f"Recarga igual: {misma_salida}  Cortes fallidos: {fallos}")
+    print(f"Verificacion: recarga igual y {len(casos)} cortes en su nivel")
+
+
 def main():
     """Ejecuta el entrenamiento completo."""
     entradas, rechazo = cargar_datos()
@@ -193,6 +235,10 @@ def main():
     print(matriz)
     print("Rechazo real por nivel en prueba:")
     print(tabla.round(2).to_string())
+
+    exportar(pipeline, elegido, metricas, entradas.columns)
+    print(f"\nModelo guardado en: {RUTA_MODELO}")
+    verificar(pipeline, x_pru)
 
 
 if __name__ == "__main__":
