@@ -29,41 +29,48 @@ class M02Input(BaseModel):
     """Contrato de entrada del modelo M02 (mismas variables usadas en el entrenamiento)."""
 
     # strict=True evita que cadenas como "35" se conviertan silenciosamente a número
-    model_config = ConfigDict(strict=True, extra="forbid")
+    model_config = ConfigDict(strict=True, extra="forbid", json_schema_extra={"examples": [{
+        "male": 1, "age": 50, "education": 2, "currentSmoker": 1, "cigsPerDay": 20,
+        "BPMeds": 0, "prevalentStroke": 0, "prevalentHyp": 0, "diabetes": 0,
+        "totChol": 240, "BMI": 26.5, "heartRate": 75, "glucose": 80,
+    }]})
 
-    male: Binary
-    age: int = Field(ge=1, le=120)
-    education: int = Field(ge=1, le=4)
-    currentSmoker: Binary
-    cigsPerDay: float = Field(ge=0, le=100)
-    BPMeds: Binary
-    prevalentStroke: Binary
-    prevalentHyp: Binary
-    diabetes: Binary
-    totChol: float = Field(gt=0, le=1000)
-    BMI: float = Field(gt=0, le=100)
-    heartRate: float = Field(gt=0, le=300)
-    glucose: float = Field(gt=0, le=1000)
-
+    male: Binary = Field(description="Sexo del paciente: 1 = masculino, 0 = femenino.")
+    age: int = Field(ge=1, le=120, description="Edad en años.")
+    education: int = Field(
+        ge=1, le=4,
+        description="Nivel educativo: 1 = primaria, 2 = secundaria, 3 = técnico, "
+                    "4 = universitario.",
+    )
+    currentSmoker: Binary = Field(description="Fumador actual: 1 = sí, 0 = no.")
+    cigsPerDay: float = Field(ge=0, le=100, description="Cigarrillos por día (0 si no fuma).")
+    BPMeds: Binary = Field(description="Toma medicamentos para la presión: 1 = sí, 0 = no.")
+    prevalentStroke: Binary = Field(description="Derrame cerebral previo: 1 = sí, 0 = no.")
+    prevalentHyp: Binary = Field(description="Hipertensión previa: 1 = sí, 0 = no.")
+    diabetes: Binary = Field(description="Diabetes: 1 = sí, 0 = no.")
+    totChol: float = Field(gt=0, le=1000, description="Colesterol total en mg/dL.")
+    BMI: float = Field(gt=0, le=100, description="Índice de masa corporal en kg/m².")
+    heartRate: float = Field(gt=0, le=300, description="Frecuencia cardíaca en latidos por minuto.")
+    glucose: float = Field(gt=0, le=1000, description="Glucosa en mg/dL.")
 
 class M02Metrica(BaseModel):
     """Métricas del modelo obtenidas sobre el conjunto de prueba."""
 
-    MAE: float
-    RMSE: float
-    R2: float
+    MAE: float = Field(description="Error absoluto medio, en mmHg.")
+    RMSE: float = Field(description="Raíz del error cuadrático medio, en mmHg.")
+    R2: float = Field(description="Coeficiente de determinación.")
 
 
 class M02Output(BaseModel):
     """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica e id_ejecucion."""
 
-    id_ejecucion: str
-    fecha: str
-    hora: str
-    modelo: str
-    prediccion: float
-    unidad: str
-    metrica: M02Metrica
+    id_ejecucion: str = Field(description="Identificador único (UUID v4) de la ejecución.")
+    fecha: str = Field(description="Fecha de la ejecución (AAAA-MM-DD).")
+    hora: str = Field(description="Hora de la ejecución (HH:MM:SS).")
+    modelo: str = Field(description='Identificador del modelo ("M02").')
+    prediccion: float = Field(description="Presión arterial sistólica estimada, con 2 decimales.")
+    unidad: str = Field(description='Unidad de la predicción ("mmHg").')
+    metrica: M02Metrica = Field(description="Métricas del modelo sobre el conjunto de prueba.")
 
 
 @lru_cache(maxsize=1)

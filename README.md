@@ -62,7 +62,7 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   uv run proyecto-pruebas-api
   ```
   - Interfaz: `/` (inicio con los tres modelos), `/m02` (formulario de M02) y `/m01`, `/m03` (vistas previas, aún sin campos).
-  - API: `POST /predict/m02` (presión arterial sistólica estimada). Entradas inválidas devuelven `400` con el detalle de cada campo. Documentación interactiva en `/docs`.
+  - API: `POST /predict/m02` (presión arterial sistólica estimada). Entradas inválidas devuelven `400` con el detalle de cada campo. El contrato completo está en [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y la documentación interactiva en `/docs`.
 - **Correr las pruebas (pytest):**
   ```bash
   uv run pytest
