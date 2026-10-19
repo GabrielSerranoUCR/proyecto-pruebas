@@ -1,27 +1,27 @@
-import os
+"""Verificación del ambiente: versiones instaladas y conexión con Supabase."""
+
+import pytest
 import scipy
 import sklearn
-import pytest
-from supabase import create_client, Client
-from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
+from proyecto_pruebas.logs_supabase import get_client
 
-supabase_url: str = os.environ.get("SUPABASE_URL", "")
-supabase_key: str = os.environ.get("SUPABASE_KEY", "")
-
-if not supabase_url or not supabase_key:
-    raise ValueError("SUPABASE_URL and SUPABASE_KEY must be set in environment variables.")
-
-client: Client = create_client(supabase_url, supabase_key)
 
 def main() -> None:
+    """Imprime las versiones instaladas y verifica la conexión con Supabase."""
     print("SciPy:", scipy.__version__)
     print("Scikit-learn:", sklearn.__version__)
     print("Pytest:", pytest.__version__)
     supabase_connection()
 
+
 def supabase_connection() -> None:
+    """Comprueba la conexión con Supabase usando la tabla de prueba."""
+    client = get_client()
+    if client is None:
+        print("Supabase no está configurado (SUPABASE_URL / SUPABASE_KEY).")
+        return
+
     try:
         # Test the connection by fetching data from a test table
         response = client.table("users_test").select("*").execute()
@@ -29,7 +29,7 @@ def supabase_connection() -> None:
         print("Successfully connected to Supabase!")
         print("Fetched rows:", response.data)
 
-    except Exception as error:
+    except Exception as error:  # pylint: disable=broad-exception-caught
         print(f"An error occurred while connecting to Supabase: {error}")
 
 if __name__ == "__main__":

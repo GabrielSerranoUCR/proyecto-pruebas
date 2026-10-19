@@ -72,6 +72,21 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   uv run pylint src
   ```
 
+## Registro de ejecuciones en Supabase
+
+La API guarda en Supabase cada solicitud a `/predict/<modelo>` (entrada, salida, estado HTTP y duración), incluidos los errores 400, 404 y 500. Cada modelo tiene su propia tabla: `logs_m01`, `logs_m02` y `logs_m03`.
+
+1. Ejecutar [`supabase/logs_modelos.sql`](supabase/logs_modelos.sql) en el SQL Editor de Supabase. El script crea las tablas, habilita RLS y permite únicamente inserciones con la clave `anon`.
+2. Configurar en `.env`:
+   ```env
+   SUPABASE_URL=...
+   SUPABASE_KEY=...        # clave anon
+   SUPABASE_LOGS_ENABLED=true
+   ```
+3. Reiniciar la API con `uv run proyecto-pruebas-api`.
+
+Si Supabase no está disponible, la predicción se devuelve igual y el registro se escribe en la terminal del proceso (caso CP-27). Lo mismo ocurre si faltan `SUPABASE_URL`/`SUPABASE_KEY` o si se usa `SUPABASE_LOGS_ENABLED=false`: no se intenta conectar y el log se imprime en consola. Las rutas de modelos desconocidos (por ejemplo `/predict/m99`) solo se registran en la terminal, porque no tienen tabla asociada.
+
 ## Estructura del repositorio.
 - `README.md`: documentación del proyecto.
 - `pyproject.toml` / `uv.lock`: dependencias del proyecto (ver nota abajo).
