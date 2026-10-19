@@ -16,5 +16,5 @@ Clasificación multiclase: estima el nivel de riesgo (bajo, medio, alto) de una 
 ## Ejecución
 
 ```bash
-uv run python src/m03_riesgo_morosidad/entrenamiento.py
+uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
 ```
