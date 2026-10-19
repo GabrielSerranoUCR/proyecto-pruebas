@@ -7,6 +7,7 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -62,6 +63,22 @@ async def unhandled_error_handler(_request: Request, exc: Exception) -> JSONResp
     """Evita exponer stack traces, rutas internas o credenciales en la respuesta."""
     logger.exception("Error interno no controlado", exc_info=exc)
     return error_json(500, error="Error interno del servidor")
+
+
+def openapi_schema() -> dict:
+    """Esquema OpenAPI sin la respuesta 422 de FastAPI, que esta API reemplaza por 400."""
+    if not app.openapi_schema:
+        schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
+        for path in schema["paths"].values():
+            for operation in path.values():
+                operation["responses"].pop("422", None)
+        for nombre in ("HTTPValidationError", "ValidationError"):
+            schema.get("components", {}).get("schemas", {}).pop(nombre, None)
+        app.openapi_schema = schema
+    return app.openapi_schema
+
+
+app.openapi = openapi_schema
 
 
 def run() -> None:
