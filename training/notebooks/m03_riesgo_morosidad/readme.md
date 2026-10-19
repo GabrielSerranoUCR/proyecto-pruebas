@@ -18,3 +18,5 @@ Clasificación multiclase: estima el nivel de riesgo (bajo, medio, alto) de una 
 ```bash
 uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
 ```
+
+- **Nota:** el modelo exportado no se versiona (`.gitignore`); hay que correr el script antes de levantar la API.
