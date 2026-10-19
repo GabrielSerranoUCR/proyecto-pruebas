@@ -154,7 +154,7 @@ legend .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
   padding-bottom: 14px; color: var(--muted);
 }
 .campo > span { align-self: end; font-size: 0.68rem; line-height: 1.4; }
-.campo input, .campo select {
+.campo input, .campo select, .dropdown-boton {
   width: 100%; height: var(--alto-campo); margin: 0; padding: 0 12px;
   font: 500 0.95rem "Montserrat", system-ui, sans-serif; color: var(--text);
   background: var(--campo-bg); border: 1px solid var(--linea); border-radius: 0;
@@ -169,7 +169,8 @@ legend .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
 .campo select option { color: var(--negro); background: var(--blanco); }
 .campo input[type=number] { -moz-appearance: textfield; }
 .campo input::-webkit-inner-spin-button, .campo input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-.campo input:focus, .campo select:focus { outline: 2px solid var(--blanco); outline-offset: -2px; }
+.campo input:focus, .campo select:focus, .dropdown-boton:focus-visible,
+.dropdown-boton[aria-expanded="true"] { outline: 2px solid var(--blanco); outline-offset: -2px; }
 /* Campo deshabilitado: fondo rayado, borde punteado, texto atenuado y etiqueta tenue */
 .campo input:disabled {
   color: var(--muted); border-style: dashed; cursor: not-allowed;
@@ -219,3 +220,32 @@ form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: n
 .modelo-info dt { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
 .modelo-info dd { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; }
 
+/* ---------- Lista desplegable propia (dropdown.js) ---------- */
+.dropdown { position: relative; }
+.dropdown-boton {
+  display: flex; align-items: center; text-align: left; padding-right: 36px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.dropdown-boton > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dropdown-boton[aria-expanded="true"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 7l5-5 5 5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+}
+.dropdown-lista {
+  position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; right: 0;
+  margin: 0; padding: 0; list-style: none; max-height: 240px; overflow-y: auto;
+  background: var(--negro); border: 1px solid var(--blanco);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+.dropdown-lista:focus { outline: none; }
+.dropdown-lista [role="option"] {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 11px 12px; font-size: 0.95rem; font-weight: 500; cursor: pointer;
+  border-left: 3px solid transparent;
+}
+.dropdown-lista [role="option"] + [role="option"] { border-top: 1px solid rgb(255 255 255 / 0.08); }
+.dropdown-lista .activa { background: var(--blanco); color: var(--negro); }
+.dropdown-lista [aria-selected="true"] { font-weight: 700; border-left-color: var(--acento); }
+.dropdown-lista [aria-selected="true"]::after {
+  content: ""; width: 8px; height: 8px; background: var(--acento); flex: none;
+}
