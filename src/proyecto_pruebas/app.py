@@ -1,5 +1,5 @@
 """
-Aplicación FastAPI (MVC): conecta los controladores de la API.
+Aplicación FastAPI (MVC): conecta los controladores de la API y de las páginas.
 Curso: Pruebas de Software (CI0142)
 """
 
@@ -8,13 +8,16 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-from proyecto_pruebas.controllers import api_m02
+from proyecto_pruebas.controllers import api_m02, pages
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Proyecto Pruebas - API de modelos", version="0.1.0")
 app.include_router(api_m02.router)
+app.include_router(pages.router)
+app.mount("/static", StaticFiles(directory=pages.STATIC_DIR), name="static")
 
 
 @app.exception_handler(RequestValidationError)

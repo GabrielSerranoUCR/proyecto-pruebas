@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block body_class %}inicio{% endblock %}
+
+{% block body %}
+<main class="paneles">
+  <h1 class="visually-hidden">Modelos de predicción</h1>
+  {% for m in modelos %}
+  <section class="panel{% if not m.ruta %} pendiente{% endif %}" aria-labelledby="panel-{{ m.id }}">
+    <img src="{{ url_for('static', path=m.imagen) }}" alt="" class="panel-img">
+    <div class="panel-info">
+      <span class="panel-codigo">{{ m.id }}</span>
+      <h2 id="panel-{{ m.id }}" class="panel-titulo">{{ m.nombre }}</h2>
+    </div>
+    {% if m.ruta %}
+    <a class="panel-boton" href="{{ m.ruta }}">Calcular &rarr;</a>
+    {% else %}
+    <span class="panel-boton" aria-disabled="true">Próximamente</span>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  <!-- Líneas blancas que separan los paneles (mismos puntos que los clip-path de styles.css) -->
+  <svg class="separadores" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M40 0 L36 24 L38 24 L34 50 L36 50 L30 74 L22 100" />
+    <path d="M68 0 L64 24 L66 24 L60 50 L62 50 L67 74 L76 100" />
+  </svg>
+</main>
+{% endblock %}

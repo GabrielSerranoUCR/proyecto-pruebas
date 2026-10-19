@@ -1,0 +1,221 @@
+/* Lenguaje de diseño modernista (estilo suizo): retícula, esquinas rectas, superficies planas,
+   tipografía Montserrat con jerarquía fuerte y un solo color de acento. */
+:root {
+  --negro: #0b0b0b; --blanco: #ffffff; --acento: #e1251b;
+  --card: rgb(11 11 11 / 0.88); --text: var(--blanco); --muted: rgb(255 255 255 / 0.66);
+  --linea: rgb(255 255 255 / 0.28); --campo-bg: rgb(255 255 255 / 0.05);
+  --ok: #3ccf7e; --err: #ff6b61;
+  --disabled-bg: rgb(255 255 255 / 0.02); --stripe: rgb(255 255 255 / 0.10);
+  --alto-campo: 44px;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px 16px; background: var(--negro); color: var(--text);
+  font: 400 15px/1.5 "Montserrat", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+[hidden] { display: none !important; }
+
+/* Etiqueta pequeña en mayúsculas, usada en códigos, leyendas, etiquetas y botones */
+.panel-codigo, legend, .campo > span, .resultado h2, .panel-boton, form button[type=submit] {
+  font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+}
+
+/* ---------- Inicio: tres paneles con bordes escalonados ---------- */
+body.inicio { padding: 0; }
+.paneles { position: relative; height: 100vh; height: 100dvh; min-height: 520px; overflow: hidden; }
+.panel { position: absolute; inset: 0; color: var(--blanco); }
+/* Los puntos de cada borde coinciden con las líneas del SVG .separadores */
+.panel:nth-of-type(1) {
+  clip-path: polygon(0 0, 40% 0, 36% 24%, 38% 24%, 34% 50%, 36% 50%, 30% 74%, 22% 100%, 0 100%);
+  --img-x: 0%; --img-w: 40%; --titulo-x: 3%; --boton-x: 16%;
+}
+.panel:nth-of-type(2) {
+  clip-path: polygon(40% 0, 68% 0, 64% 24%, 66% 24%, 60% 50%, 62% 50%, 67% 74%, 76% 100%,
+                     22% 100%, 30% 74%, 36% 50%, 34% 50%, 38% 24%, 36% 24%);
+  --img-x: 22%; --img-w: 54%; --titulo-x: 42%; --boton-x: 48%;
+}
+.panel:nth-of-type(3) {
+  clip-path: polygon(68% 0, 100% 0, 100% 100%, 76% 100%, 67% 74%, 62% 50%, 60% 50%, 66% 24%, 64% 24%);
+  --img-x: 60%; --img-w: 40%; --titulo-x: 70%; --boton-x: 81%;
+}
+/* Cada imagen cubre solo el área de su panel, para que el sujeto quede visible */
+.panel-img {
+  position: absolute; top: 0; height: 100%; left: var(--img-x); width: var(--img-w);
+  object-fit: cover; filter: brightness(0.7); transition: transform 0.6s ease, filter 0.4s ease;
+}
+.panel::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.62) 0%, rgb(0 0 0 / 0.32) 30%, rgb(0 0 0 / 0.42) 100%);
+  transition: opacity 0.4s ease;
+}
+/* Atenuada en reposo; brillante al pasar el cursor o al enfocar su botón con el teclado */
+.panel:hover .panel-img, .panel:focus-within .panel-img { transform: scale(1.03); filter: brightness(1.05); }
+.panel:hover::after, .panel:focus-within::after { opacity: 0.55; }
+.panel.pendiente .panel-img { filter: grayscale(1) brightness(0.6); }
+.panel-info {
+  position: absolute; z-index: 1; top: 6vh; left: var(--titulo-x); max-width: 24%;
+}
+.panel-codigo {
+  display: flex; align-items: center; gap: 10px; font-size: 0.72rem;
+}
+.panel-codigo::before { content: ""; width: 28px; height: 3px; background: var(--acento); }
+.panel-titulo {
+  margin: 12px 0 0; font-size: clamp(1.6rem, 2.8vw, 2.8rem); font-weight: 800;
+  line-height: 1.05; letter-spacing: -0.02em;
+}
+.panel-boton {
+  position: absolute; z-index: 1; top: 54%; left: var(--boton-x); transform: translate(-50%, -50%);
+  padding: 14px 26px; border: 2px solid var(--blanco); color: var(--blanco);
+  font-size: 0.75rem; text-decoration: none; white-space: nowrap;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+a.panel-boton { background: var(--acento); border-color: var(--acento); }
+a.panel-boton:hover, a.panel-boton:focus-visible { background: var(--blanco); border-color: var(--blanco); color: var(--negro); }
+.panel-boton[aria-disabled="true"] { border-color: rgb(255 255 255 / 0.5); color: rgb(255 255 255 / 0.7); cursor: not-allowed; }
+.separadores { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.separadores path { fill: none; stroke: var(--blanco); stroke-width: 4; vector-effect: non-scaling-stroke; }
+
+/* En pantallas angostas los paneles se apilan */
+@media (max-width: 720px) {
+  .paneles { height: auto; min-height: 0; display: flex; flex-direction: column; }
+  /* Mismo selector que las reglas de escritorio para poder sobrescribirlas */
+  .panel:nth-of-type(n) {
+    position: relative; inset: auto; clip-path: none; min-height: 36vh;
+    --img-x: 0%; --img-w: 100%; --titulo-x: 16px; --boton-x: 50%;
+  }
+  .panel + .panel { border-top: 4px solid var(--blanco); }
+  .panel-info { top: 20px; max-width: calc(100% - 32px); }
+  .panel-boton { top: 66%; }
+  .separadores { display: none; }
+}
+
+/* ---------- Página de un modelo ---------- */
+body.pagina-modelo { min-height: 100vh; }
+.fondo { position: fixed; inset: 0; z-index: -1; background-size: cover; background-position: center; }
+.fondo::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.72) 0%, rgb(0 0 0 / 0.5) 40%, rgb(0 0 0 / 0.7) 100%);
+}
+
+/* Ocupa toda la altura de la ventana para que las tarjetas lleguen hasta abajo */
+.modelo {
+  max-width: 1320px; margin: 0 auto; display: flex; flex-direction: column;
+  min-height: calc(100vh - 40px); min-height: calc(100dvh - 40px);
+}
+.modelo-layout { flex: 1; }
+form.tarjeta { display: flex; flex-direction: column; }
+/* Pie del formulario anclado abajo, alineado con el pie de la tarjeta de resultado */
+.form-pie {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--linea);
+}
+.form-pie .meta { margin: 0; }
+.modelo-header { position: relative; display: flex; align-items: center; justify-content: center; min-height: 48px; }
+.modelo-header h1 {
+  margin: 0; padding: 0 64px; text-align: center;
+  font-size: clamp(2rem, 3.4vw, 2.8rem); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em;
+}
+.volver {
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  display: grid; place-items: center; width: 48px; height: 48px;
+  color: var(--blanco); border: 2px solid var(--blanco); background: transparent;
+  font-size: 1.3rem; text-decoration: none; transition: background 0.2s, color 0.2s;
+}
+.volver:hover, .volver:focus-visible { background: var(--blanco); color: var(--negro); }
+p.sub { margin: 8px 0 20px; color: var(--muted); text-align: center; font-weight: 500; }
+.modelo-layout {
+  display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 24px; align-items: stretch;
+}
+@media (max-width: 900px) { .modelo-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.tarjeta { background: var(--card); border-top: 6px solid var(--acento); padding: 24px 28px; }
+
+form { container-type: inline-size; }
+fieldset { border: 0; margin: 0 0 4px; padding: 0; min-width: 0; }
+legend {
+  display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 0 0 8px; margin-bottom: 13px;
+  border-bottom: 1px solid var(--linea); font-size: 0.75rem;
+}
+legend .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
+
+/* Retícula de campos: cada campo ocupa 3 filas (etiqueta, control, error) compartidas con
+   subgrid, así etiquetas, controles y errores quedan alineados en toda la fila. */
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 20px; }
+@container (max-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 540px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 340px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.campo {
+  display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 6px;
+  padding-bottom: 14px; color: var(--muted);
+}
+.campo > span { align-self: end; font-size: 0.68rem; line-height: 1.4; }
+.campo input, .campo select {
+  width: 100%; height: var(--alto-campo); margin: 0; padding: 0 12px;
+  font: 500 0.95rem "Montserrat", system-ui, sans-serif; color: var(--text);
+  background: var(--campo-bg); border: 1px solid var(--linea); border-radius: 0;
+  appearance: none; -webkit-appearance: none;
+}
+/* Flecha propia para que los select midan y luzcan igual que los input */
+.campo select {
+  padding-right: 36px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.campo select option { color: var(--negro); background: var(--blanco); }
+.campo input[type=number] { -moz-appearance: textfield; }
+.campo input::-webkit-inner-spin-button, .campo input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.campo input:focus, .campo select:focus { outline: 2px solid var(--blanco); outline-offset: -2px; }
+/* Campo deshabilitado: fondo rayado, borde punteado, texto atenuado y etiqueta tenue */
+.campo input:disabled {
+  color: var(--muted); border-style: dashed; cursor: not-allowed;
+  background: repeating-linear-gradient(135deg, var(--stripe) 0 2px, var(--disabled-bg) 2px 8px);
+}
+.campo:has(input:disabled) > span { opacity: 0.55; }
+.campo [aria-invalid="true"] { border-color: var(--err); }
+.campo-error { color: var(--err); font-size: 0.75rem; font-weight: 600; }
+
+form button[type=submit] {
+  display: inline-flex; align-items: center; gap: 14px; padding: 15px 28px;
+  font-family: inherit; font-size: 0.78rem; color: var(--blanco); background: var(--acento);
+  border: 0; border-radius: 0; cursor: pointer; transition: background 0.2s, color 0.2s;
+}
+form button[type=submit]::after { content: "→"; font-size: 1rem; letter-spacing: 0; }
+form button[type=submit]:hover, form button[type=submit]:focus-visible { background: var(--blanco); color: var(--negro); }
+form button[type=submit]:disabled { opacity: 0.6; cursor: wait; }
+/* Botón de una vista previa: deshabilitado de forma permanente */
+form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Vista previa de un modelo sin campos todavía */
+.vista-previa { flex: 1; margin-bottom: 16px; border: 1px dashed var(--linea); }
+
+.resultado { display: flex; flex-direction: column; transition: border-color 0.2s; }
+.resultado h2 { margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--linea); font-size: 0.75rem; }
+.resultado.ok { border-top-color: var(--ok); }
+.resultado.err { border-top-color: var(--err); }
+.resultado.err #result-body { color: var(--err); }
+.resultado.err strong { font-weight: 700; }
+.resultado ul { margin: 8px 0 0; padding-left: 18px; }
+.resultado p { margin: 0; }
+.valor {
+  margin: 4px 0 14px; font-size: clamp(2.2rem, 4vw, 3rem); font-weight: 800; line-height: 1;
+  letter-spacing: -0.03em; white-space: nowrap;
+}
+.unidad { margin-left: 8px; font-size: 0.4em; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); }
+.meta { color: var(--muted); font-size: 0.8rem; font-weight: 500; overflow-wrap: anywhere; }
+.meta + .meta { margin-top: 4px; }
+
+/* Información del modelo, al pie de la tarjeta de resultado */
+.modelo-info { margin-top: auto; padding-top: 24px; }
+.modelo-info h3 {
+  margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--linea);
+  font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
+}
+.modelo-info dl { margin: 0; }
+.modelo-info dt { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
+.modelo-info dd { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; }
+
