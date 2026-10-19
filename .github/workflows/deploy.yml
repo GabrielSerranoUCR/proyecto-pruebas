@@ -58,11 +58,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      # Las versiones recientes de Coolify solo aceptan POST en /api/v1/deploy (GET responde 405)
       - name: Desplegar en Coolify
         env:
           COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
           COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
         run: |
           curl --fail-with-body --silent --show-error --max-time 60 \
-            --request GET "$COOLIFY_WEBHOOK" \
+            --request POST "$COOLIFY_WEBHOOK" \
             --header "Authorization: Bearer $COOLIFY_TOKEN"
