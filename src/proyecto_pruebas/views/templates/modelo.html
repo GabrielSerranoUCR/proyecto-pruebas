@@ -14,16 +14,28 @@
   <p class="sub">{{ descripcion }}</p>
 
   <div class="modelo-layout">
-    <form id="form" class="tarjeta"{% if endpoint %} data-endpoint="{{ endpoint }}"{% endif %} novalidate>
+    <form id="form" class="tarjeta" style="--columnas: {{ columnas }}"{% if endpoint %} data-endpoint="{{ endpoint }}"{% endif %} novalidate>
+      {% if grupos | length > 1 %}
+      {# Pestañas de las secciones; solo se muestran en pantallas angostas (pestanas.js) #}
+      <div class="pestanas" role="tablist" aria-label="Secciones del formulario">
+        {% for grupo in grupos %}
+        <button type="button" role="tab" id="pestana-{{ loop.index }}" aria-controls="grupo-{{ loop.index }}">
+          <span class="num">{{ "%02d" | format(loop.index) }}</span>{{ grupo.titulo }}
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
       {% for grupo in grupos %}
-      <fieldset>
+      <fieldset id="grupo-{{ loop.index }}">
         <legend><span class="num">{{ "%02d" | format(loop.index) }}</span>{{ grupo.titulo }}</legend>
         <div class="grid">
           {% for campo in grupo.campos %}
           <label class="campo">
             <span>{{ campo.label }}</span>
             {% if campo.options %}
-            <select name="{{ campo.name }}" data-type="int">
+            <select name="{{ campo.name }}" data-type="{{ campo.tipo }}"
+                    {%- if campo.habilita %} data-habilita="{{ campo.habilita }}"{% endif %}
+                    {%- if campo.local %} data-local{% endif %}>
               {% for value, label in campo.options %}
               <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
@@ -59,6 +71,14 @@
           <dt>Algoritmo</dt><dd>{{ algoritmo }}</dd>
         </dl>
       </section>
+      {% if endpoint %}
+      {# Solo en móvil, donde el resultado se muestra como una pantalla aparte (predict.js) #}
+      <details id="resumen" class="resumen">
+        <summary>Datos ingresados</summary>
+        <div id="resumen-datos"></div>
+      </details>
+      <button type="button" id="recalcular" class="boton-recalcular">Calcular de nuevo</button>
+      {% endif %}
     </aside>
   </div>
 </main>
@@ -67,6 +87,7 @@
 {% block scripts %}
 {% if endpoint %}
 <script src="{{ url_for('static', path='dropdown.js') }}"></script>
+<script src="{{ url_for('static', path='pestanas.js') }}"></script>
 <script src="{{ url_for('static', path='predict.js') }}"></script>
 {% endif %}
 {% endblock %}

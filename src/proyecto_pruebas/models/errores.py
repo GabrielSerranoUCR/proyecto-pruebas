@@ -43,6 +43,9 @@ def mensaje_validacion(err: dict) -> str:
         "greater_than_equal": f"El valor debe ser mayor o igual que {ctx.get('ge')}",
         "less_than": f"El valor debe ser menor que {ctx.get('lt')}",
         "less_than_equal": f"El valor debe ser menor o igual que {ctx.get('le')}",
+        "string_type": "Debe ser una cadena de texto",
+        "literal_error": "Valor no permitido; valores válidos: "
+                         f"{str(ctx.get('expected', '')).replace(' or ', ' o ')}",
         "extra_forbidden": "Campo no permitido",
         "json_invalid": "El cuerpo de la solicitud no es un JSON válido",
         "model_attributes_type": "El cuerpo debe ser un objeto JSON",
