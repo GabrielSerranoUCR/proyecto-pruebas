@@ -4,10 +4,18 @@ from pathlib import Path
 
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.dummy import DummyClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score, confusion_matrix, f1_score, make_scorer,
+    precision_score, recall_score,
+)
+from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.tree import DecisionTreeClassifier
 
 RAIZ = Path(__file__).resolve().parents[2]
 RUTA_DATOS = RAIZ / "data" / "raw" / "M01-M02-M03.xlsx"
@@ -94,6 +102,69 @@ def dividir(entradas, rechazo):
     )
 
 
+def candidatos():
+    """Linea base y modelos a comparar, con hiperparametros fijos."""
+    return {
+        "Dummy": DummyClassifier(strategy="most_frequent"),
+        "Regresion logistica": LogisticRegression(max_iter=1000, random_state=SEMILLA),
+        "Arbol de decision": DecisionTreeClassifier(max_depth=4, random_state=SEMILLA),
+        "Random Forest": RandomForestClassifier(
+            n_estimators=200, max_depth=6, random_state=SEMILLA,
+        ),
+    }
+
+
+def armar_pipeline(modelo):
+    """Preprocesador y modelo en un solo objeto, que es lo que se exporta."""
+    return Pipeline([("preprocesar", crear_preprocesador()), ("modelo", modelo)])
+
+
+def comparar(modelos, x_ent, y_ent):
+    """F1 promedio de validacion cruzada por modelo, usando solo entrenamiento.
+
+    El preprocesador se ajusta dentro de cada pliegue, asi que la mediana,
+    la moda y la escala nunca ven el pliegue con que se evalua.
+    """
+    pliegues = StratifiedKFold(n_splits=PLIEGUES_CV, shuffle=True, random_state=SEMILLA)
+    f1 = make_scorer(f1_score, zero_division=0)
+    return {
+        nombre: cross_val_score(
+            armar_pipeline(modelo), x_ent, y_ent, cv=pliegues, scoring=f1,
+        ).mean()
+        for nombre, modelo in modelos.items()
+    }
+
+
+def asignar_nivel(probabilidad):
+    """Convierte la probabilidad de rechazo en bajo, medio o alto."""
+    if not 0 <= probabilidad <= 1:
+        raise ValueError(f"Probabilidad fuera de [0, 1]: {probabilidad}")
+    if probabilidad < CORTE_MEDIO:
+        return NIVELES[0]
+    if probabilidad < CORTE_ALTO:
+        return NIVELES[1]
+    return NIVELES[2]
+
+
+def evaluar(pipeline, x_pru, y_pru):
+    """Metricas binarias, matriz de confusion y rechazo real por nivel."""
+    prediccion = pipeline.predict(x_pru)
+    probabilidad = pipeline.predict_proba(x_pru)[:, 1]
+    metricas = {
+        "accuracy": accuracy_score(y_pru, prediccion),
+        "precision": precision_score(y_pru, prediccion, zero_division=0),
+        "recall": recall_score(y_pru, prediccion, zero_division=0),
+        "f1": f1_score(y_pru, prediccion, zero_division=0),
+    }
+    niveles = pd.Series([asignar_nivel(p) for p in probabilidad], index=y_pru.index)
+    tabla = (
+        pd.DataFrame({"nivel": niveles, "rechazo": y_pru})
+        .groupby("nivel")["rechazo"].agg(registros="count", rechazo_real="mean")
+        .reindex(NIVELES)
+    )
+    return metricas, confusion_matrix(y_pru, prediccion), tabla
+
+
 def main():
     """Ejecuta el entrenamiento completo."""
     entradas, rechazo = cargar_datos()
@@ -106,6 +177,22 @@ def main():
     x_ent, x_pru, y_ent, y_pru = dividir(entradas, rechazo)
     print(f"Entrenamiento: {len(x_ent)}  Prueba: {len(x_pru)}")
     print(f"Tasa de rechazo  entrenamiento: {y_ent.mean():.3f}  prueba: {y_pru.mean():.3f}")
+
+    modelos = candidatos()
+    f1_cv = comparar(modelos, x_ent, y_ent)
+    print("\nF1 de validacion cruzada (entrenamiento):")
+    for nombre, valor in sorted(f1_cv.items(), key=lambda par: par[1], reverse=True):
+        print(f"  {nombre:<20} {valor:.3f}")
+
+    elegido = max(f1_cv, key=f1_cv.get)
+    pipeline = armar_pipeline(modelos[elegido]).fit(x_ent, y_ent)
+    metricas, matriz, tabla = evaluar(pipeline, x_pru, y_pru)
+    print(f"\nModelo elegido: {elegido}")
+    print("Metricas en prueba:", {k: round(v, 3) for k, v in metricas.items()})
+    print("Matriz de confusion (filas: real 0/1, columnas: predicho 0/1):")
+    print(matriz)
+    print("Rechazo real por nivel en prueba:")
+    print(tabla.round(2).to_string())
 
 
 if __name__ == "__main__":
