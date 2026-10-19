@@ -9,8 +9,10 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from proyecto_pruebas.controllers import api_m02, pages
+from proyecto_pruebas.models.errores import ErrorRespuesta, mensaje_validacion
 
 logger = logging.getLogger(__name__)
 
@@ -20,21 +22,46 @@ app.include_router(pages.router)
 app.mount("/static", StaticFiles(directory=pages.STATIC_DIR), name="static")
 
 
+# Mensajes para los errores HTTP que genera el framework (ruta o método inexistente)
+ERRORES_HTTP = {404: "Ruta no encontrada", 405: "Método no permitido"}
+
+
+def error_json(status_code: int, **campos) -> JSONResponse:
+    """Respuesta de error con el formato común de la API."""
+    # exclude_unset conserva "campo": null cuando se indica explícitamente
+    cuerpo = ErrorRespuesta(**campos).model_dump(exclude_unset=True)
+    return JSONResponse(status_code=status_code, content=cuerpo)
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_handler(_request: Request, exc: RequestValidationError) -> JSONResponse:
     """Responde 400 (en lugar del 422 por defecto) con el detalle de cada campo inválido."""
-    errores = [
-        {"campo": ".".join(str(part) for part in err["loc"][1:]), "mensaje": err["msg"]}
-        for err in exc.errors()
-    ]
-    return JSONResponse(status_code=400, content={"error": "Entrada inválida", "detalle": errores})
+    errores = []
+    for err in exc.errors():
+        # loc = ("body", "<campo>"); en un JSON mal formado el segundo elemento es la posición
+        campo = err["loc"][1] if len(err["loc"]) > 1 and err["type"] != "json_invalid" else None
+        errores.append({"campo": campo, "detalle": mensaje_validacion(err)})
+
+    if any(err["type"] == "json_invalid" for err in exc.errors()):
+        tipo = "JSON mal formado"
+    elif errores[0]["campo"] is None:
+        tipo = "Cuerpo de la solicitud inválido"
+    else:
+        tipo = "Parámetro inválido"
+    return error_json(400, error=tipo, **errores[0], errores=errores)
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error_handler(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    """Devuelve los errores HTTP del framework (404, 405, ...) con el formato común."""
+    return error_json(exc.status_code, error=ERRORES_HTTP.get(exc.status_code, str(exc.detail)))
 
 
 @app.exception_handler(Exception)
 async def unhandled_error_handler(_request: Request, exc: Exception) -> JSONResponse:
     """Evita exponer stack traces, rutas internas o credenciales en la respuesta."""
     logger.exception("Error interno no controlado", exc_info=exc)
-    return JSONResponse(status_code=500, content={"error": "Error interno del servidor"})
+    return error_json(500, error="Error interno del servidor")
 
 
 def run() -> None:

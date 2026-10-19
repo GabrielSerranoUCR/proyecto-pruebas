@@ -116,7 +116,8 @@
       if (response.ok) {
         showResult(data);
       } else if (response.status === 400) {
-        showError(data.error || "Entrada inválida", (data.detalle || []).map((d) => `${d.campo}: ${d.mensaje}`));
+        showError(data.error || "Parámetro inválido",
+          (data.errores || []).map((e) => (e.campo ? `${e.campo}: ${e.detalle}` : e.detalle)));
       } else {
         showError(data.error || `Error del servidor (${response.status})`);
       }
