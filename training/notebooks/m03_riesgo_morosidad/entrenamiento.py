@@ -1,9 +1,11 @@
 """Entrenamiento del modelo M03 (riesgo de morosidad). Decisiones en README.md."""
 
 from pathlib import Path
+
 import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -33,6 +35,7 @@ COLUMNAS_CATEGORICAS = [
     "Property_Area", "Credit_History",
 ]
 
+
 def cargar_datos(ruta=RUTA_DATOS, hoja=HOJA_ENTRENAMIENTO):
     """Lee la hoja de entrenamiento y devuelve (entradas, rechazo).
 
@@ -50,6 +53,7 @@ def cargar_datos(ruta=RUTA_DATOS, hoja=HOJA_ENTRENAMIENTO):
     rechazo = (datos[COLUMNA_OBJETIVO] == "N").astype(int).rename("rechazo")
     entradas = datos.drop(columns=[COLUMNA_ID, COLUMNA_OBJETIVO])
     return entradas, rechazo
+
 
 def verificar_columnas(entradas):
     """Falla si alguna entrada no esta asignada a un grupo o sobra en ellos."""
@@ -81,6 +85,15 @@ def crear_preprocesador():
         ("cat", categoricas, COLUMNAS_CATEGORICAS),
     ])
 
+
+def dividir(entradas, rechazo):
+    """Particion entrenamiento/prueba estratificada por rechazo."""
+    return train_test_split(
+        entradas, rechazo,
+        test_size=PROPORCION_PRUEBA, stratify=rechazo, random_state=SEMILLA,
+    )
+
+
 def main():
     """Ejecuta el entrenamiento completo."""
     entradas, rechazo = cargar_datos()
@@ -89,6 +102,10 @@ def main():
     print(f"Rechazos: {rechazo.sum()}  Aprobados: {(rechazo == 0).sum()}")
     print("Faltantes por columna:")
     print(entradas.isna().sum()[lambda s: s > 0].to_string())
+
+    x_ent, x_pru, y_ent, y_pru = dividir(entradas, rechazo)
+    print(f"Entrenamiento: {len(x_ent)}  Prueba: {len(x_pru)}")
+    print(f"Tasa de rechazo  entrenamiento: {y_ent.mean():.3f}  prueba: {y_pru.mean():.3f}")
 
 
 if __name__ == "__main__":
