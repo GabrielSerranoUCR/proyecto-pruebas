@@ -1,2 +1,1 @@
-def hello() -> str:
-    return "Hello from proyecto-pruebas!"
+"""Paquete principal de la aplicación."""
