@@ -81,6 +81,10 @@
     function abrir() {
       if (abierto && abierto !== control) abierto.cerrar(false);
       lista.hidden = false;
+      // Hacia arriba si la lista quedaría cortada abajo y hay más espacio arriba
+      const caja = boton.getBoundingClientRect();
+      const abajo = window.innerHeight - caja.bottom;
+      lista.classList.toggle("arriba", lista.offsetHeight > abajo && caja.top > abajo);
       boton.setAttribute("aria-expanded", "true");
       activar(select.selectedIndex);
       lista.focus();

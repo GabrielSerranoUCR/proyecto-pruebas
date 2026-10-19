@@ -21,7 +21,8 @@ body {
 [hidden] { display: none !important; }
 
 /* Etiqueta pequeña en mayúsculas, usada en códigos, leyendas, etiquetas y botones */
-.panel-codigo, legend, .campo > span, .resultado h2, .panel-boton, form button[type=submit] {
+.panel-codigo, legend, .campo > span, .resultado h2, .panel-boton, form button[type=submit],
+.boton-recalcular, .resumen summary {
   font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em;
 }
 
@@ -80,19 +81,31 @@ a.panel-boton:hover, a.panel-boton:focus-visible { background: var(--blanco); bo
 .separadores { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .separadores path { fill: none; stroke: var(--blanco); stroke-width: 4; vector-effect: non-scaling-stroke; }
 
-/* En pantallas angostas los paneles se apilan */
-@media (max-width: 720px) {
-  .paneles { height: auto; min-height: 0; display: flex; flex-direction: column; }
-  /* Mismo selector que las reglas de escritorio para poder sobrescribirlas */
-  .panel:nth-of-type(n) {
-    position: relative; inset: auto; clip-path: none; min-height: 36vh;
-    --img-x: 0%; --img-w: 100%; --titulo-x: 16px; --boton-x: 50%;
-  }
-  .panel + .panel { border-top: 4px solid var(--blanco); }
-  .panel-info { top: 20px; max-width: calc(100% - 32px); }
-  .panel-boton { top: 66%; }
-  .separadores { display: none; }
+.separadores-movil { display: none; }
+
+/* Las reglas ".movil" aplican en un teléfono (user agent) o en una ventana angosta (base.html).
+   En móvil los paneles se apilan, separados por las mismas líneas escalonadas
+   giradas (x e y intercambiados en cada punto de los clip-path y del SVG .separadores-movil) */
+.movil .paneles { min-height: 560px; }
+.movil .panel:nth-of-type(1) {
+  clip-path: polygon(0 0, 0 40%, 24% 36%, 24% 38%, 50% 34%, 50% 36%, 74% 30%, 100% 22%, 100% 0);
+  --img-y: 0%; --img-h: 40%; --info-y: 3%; --boton-y: 24%;
 }
+.movil .panel:nth-of-type(2) {
+  clip-path: polygon(0 40%, 0 68%, 24% 64%, 24% 66%, 50% 60%, 50% 62%, 74% 67%, 100% 76%,
+                     100% 22%, 74% 30%, 50% 36%, 50% 34%, 24% 38%, 24% 36%);
+  --img-y: 22%; --img-h: 54%; --info-y: 41%; --boton-y: 54%;
+}
+.movil .panel:nth-of-type(3) {
+  clip-path: polygon(0 68%, 0 100%, 100% 100%, 100% 76%, 74% 67%, 50% 62%, 50% 60%, 24% 66%, 24% 64%);
+  --img-y: 60%; --img-h: 40%; --info-y: 79%; --boton-y: 90%;
+}
+.movil .panel-img { top: var(--img-y); height: var(--img-h); left: 0; width: 100%; }
+.movil .panel-info { top: var(--info-y); left: 16px; max-width: calc(100% - 32px); }
+.movil .panel-titulo { margin-top: 6px; }
+.movil .panel-boton { top: var(--boton-y); left: 16px; transform: none; padding: 11px 20px; }
+.movil .separadores { display: none; }
+.movil .separadores-movil { display: block; }
 
 /* ---------- Página de un modelo ---------- */
 body.pagina-modelo { min-height: 100vh; }
@@ -132,6 +145,7 @@ p.sub { margin: 8px 0 20px; color: var(--muted); text-align: center; font-weight
   display: grid; grid-template-columns: minmax(0, 2.4fr) minmax(300px, 1fr); gap: 24px; align-items: stretch;
 }
 @media (max-width: 900px) { .modelo-layout { grid-template-columns: minmax(0, 1fr); } }
+.movil .modelo-layout { grid-template-columns: minmax(0, 1fr); }
 
 .tarjeta { background: var(--card); border-top: 6px solid var(--acento); padding: 24px 28px; }
 
@@ -145,15 +159,18 @@ legend .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
 
 /* Retícula de campos: cada campo ocupa 3 filas (etiqueta, control, error) compartidas con
    subgrid, así etiquetas, controles y errores quedan alineados en toda la fila. */
-.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 20px; }
+/* --columnas lo fija cada modelo (4 por defecto); en anchos menores se reduce */
+.grid { display: grid; grid-template-columns: repeat(var(--columnas, 4), minmax(0, 1fr)); column-gap: 20px; }
 @container (max-width: 760px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @container (max-width: 540px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @container (max-width: 340px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 .campo {
   display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 6px;
   padding-bottom: 14px; color: var(--muted);
+  /* Una columna fija: ni una etiqueta larga ni una opción larga ensanchan el campo */
+  min-width: 0; grid-template-columns: minmax(0, 1fr);
 }
-.campo > span { align-self: end; font-size: 0.68rem; line-height: 1.4; }
+.campo > span { align-self: end; font-size: 0.68rem; line-height: 1.4; overflow-wrap: break-word; }
 .campo input, .campo select, .dropdown-boton {
   width: 100%; height: var(--alto-campo); margin: 0; padding: 0 12px;
   font: 500 0.95rem "Montserrat", system-ui, sans-serif; color: var(--text);
@@ -180,13 +197,14 @@ legend .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
 .campo [aria-invalid="true"] { border-color: var(--err); }
 .campo-error { color: var(--err); font-size: 0.75rem; font-weight: 600; }
 
-form button[type=submit] {
+form button[type=submit], .boton-recalcular {
   display: inline-flex; align-items: center; gap: 14px; padding: 15px 28px;
   font-family: inherit; font-size: 0.78rem; color: var(--blanco); background: var(--acento);
   border: 0; border-radius: 0; cursor: pointer; transition: background 0.2s, color 0.2s;
 }
 form button[type=submit]::after { content: "→"; font-size: 1rem; letter-spacing: 0; }
-form button[type=submit]:hover, form button[type=submit]:focus-visible { background: var(--blanco); color: var(--negro); }
+form button[type=submit]:hover, form button[type=submit]:focus-visible,
+.boton-recalcular:hover, .boton-recalcular:focus-visible { background: var(--blanco); color: var(--negro); }
 form button[type=submit]:disabled { opacity: 0.6; cursor: wait; }
 /* Botón de una vista previa: deshabilitado de forma permanente */
 form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -220,6 +238,64 @@ form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: n
 .modelo-info dt { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); }
 .modelo-info dd { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; }
 
+/* ---------- Resultado como pantalla aparte en móvil (predict.js) ---------- */
+.resumen, .boton-recalcular { display: none; }
+/* Formulario: el resultado se ve en su propia pantalla, no debajo del formulario */
+.movil .modelo:not(.viendo-resultado) .resultado { display: none; }
+.movil .viendo-resultado form,
+.movil .viendo-resultado p.sub { display: none; }
+.movil .viendo-resultado .modelo-header { margin-bottom: 20px; }
+.movil .viendo-resultado .resumen { display: block; }
+.movil .viendo-resultado .boton-recalcular { display: flex; justify-content: center; margin-top: 20px; }
+.movil .boton-recalcular::after { content: "↺"; font-size: 1rem; letter-spacing: 0; }
+/* Tarjeta cerrada con los datos ingresados; se abre al tocar el encabezado */
+.resumen { margin-top: 24px; border: 1px solid var(--linea); }
+.resumen summary {
+  display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
+  font-size: 0.72rem; cursor: pointer; list-style: none;
+}
+.resumen summary::-webkit-details-marker { display: none; }
+.resumen summary::after { content: "+"; font-size: 1.1rem; font-weight: 600; letter-spacing: 0; }
+.resumen[open] summary::after { content: "−"; }
+.resumen summary:focus-visible { outline: 2px solid var(--blanco); outline-offset: -2px; }
+#resumen-datos { padding: 0 16px 8px; border-top: 1px solid var(--linea); }
+#resumen-datos h3 {
+  margin: 14px 0 6px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--acento);
+}
+#resumen-datos dl { margin: 0; }
+#resumen-datos dl > div {
+  display: flex; justify-content: space-between; gap: 16px; padding: 7px 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+}
+#resumen-datos dt { color: var(--muted); font-size: 0.8rem; }
+#resumen-datos dd { margin: 0; font-size: 0.85rem; font-weight: 700; text-align: right; }
+
+/* ---------- Pestañas de secciones en móvil (pestanas.js) ---------- */
+.pestanas { display: none; }
+.movil .pestanas {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  margin: -4px 0 18px; border-bottom: 1px solid var(--linea);
+}
+.movil .pestanas [role="tab"] {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 8px 6px 10px; margin-bottom: -1px; text-align: left; cursor: pointer;
+  font: 700 0.62rem/1.3 "Montserrat", system-ui, sans-serif; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0;
+}
+.movil .pestanas .num { color: var(--acento); font-weight: 800; letter-spacing: 0.04em; }
+.movil .pestanas [aria-selected="true"] { color: var(--text); border-bottom-color: var(--acento); }
+.movil .pestanas [role="tab"]:focus-visible { outline: 2px solid var(--blanco); outline-offset: -2px; }
+/* Punto rojo en una pestaña con campos inválidos */
+.movil .pestanas [data-error]::after {
+  content: ""; position: absolute; top: 8px; right: 6px; width: 7px; height: 7px; background: var(--err);
+}
+/* Solo la sección activa; la leyenda la reemplaza la pestaña */
+.movil form.con-pestanas fieldset:not(.activa) { display: none; }
+.movil form.con-pestanas legend {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
 /* ---------- Lista desplegable propia (dropdown.js) ---------- */
 .dropdown { position: relative; }
 .dropdown-boton {
@@ -227,7 +303,8 @@ form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: n
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 12px center;
 }
-.dropdown-boton > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* min-width: 0 permite que el texto se recorte con "…" en lugar de ensanchar el botón */
+.dropdown-boton > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dropdown-boton[aria-expanded="true"] {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 7l5-5 5 5' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E");
 }
@@ -237,6 +314,8 @@ form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: n
   background: var(--negro); border: 1px solid var(--blanco);
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
 }
+/* Se abre hacia arriba cuando no cabe debajo del botón (dropdown.js) */
+.dropdown-lista.arriba { top: auto; bottom: calc(100% + 4px); box-shadow: 0 -12px 32px rgb(0 0 0 / 0.5); }
 .dropdown-lista:focus { outline: none; }
 .dropdown-lista [role="option"] {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

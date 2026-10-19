@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from proyecto_pruebas.controllers import api_m02, pages
+from proyecto_pruebas.controllers import api_m01, api_m02, api_m03, pages
 from proyecto_pruebas.middleware_logs import LogMiddleware
 from proyecto_pruebas.models.errores import ErrorRespuesta, mensaje_validacion
 
@@ -20,7 +20,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Proyecto Pruebas - API de modelos", version="0.1.0")
 app.add_middleware(LogMiddleware)
+app.include_router(api_m01.router)
 app.include_router(api_m02.router)
+app.include_router(api_m03.router)
 app.include_router(pages.router)
 app.mount("/static", StaticFiles(directory=pages.STATIC_DIR), name="static")
 

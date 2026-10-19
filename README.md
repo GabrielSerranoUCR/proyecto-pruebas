@@ -56,13 +56,15 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   ```
 - **Levantar la aplicación web (FastAPI + Jinja2, en http://127.0.0.1:8000):**
 
-  Los modelos entrenados no se versionan (`training/models/` está en `.gitignore`), por lo que primero se debe generar el modelo de M02:
+  Los modelos entrenados no se versionan (`training/models/` está en `.gitignore`), por lo que primero se deben generar los modelos:
   ```bash
+  # M01: ejecutar completo el cuaderno training/notebooks/Aprobacion_de_curso_training_model.ipynb
   uv run --group jupyter python training/train_m02.py
+  uv run --group jupyter python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
   uv run proyecto-pruebas-api
   ```
-  - Interfaz: `/` (inicio con los tres modelos), `/m02` (formulario de M02) y `/m01`, `/m03` (vistas previas, aún sin campos).
-  - API: `POST /predict/m02` (presión arterial sistólica estimada). Entradas inválidas devuelven `400` con el detalle de cada campo. El contrato completo está en [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y la documentación interactiva en `/docs`.
+  - Interfaz: `/` (inicio con los tres modelos) y los formularios `/m01`, `/m02` y `/m03`.
+  - API: `POST /predict/m01` (aprobación del curso), `POST /predict/m02` (presión arterial sistólica estimada) y `POST /predict/m03` (nivel de riesgo de morosidad). Entradas inválidas devuelven `400` con el detalle de cada campo. Los contratos completos están en [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md), [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md), y la documentación interactiva en `/docs`.
 - **Correr las pruebas (pytest):**
   ```bash
   uv run pytest

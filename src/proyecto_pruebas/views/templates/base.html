@@ -1,5 +1,6 @@
 <!doctype html>
-<html lang="es">
+{% set movil = es_movil(request) %}
+<html lang="es"{% if movil %} class="movil" data-dispositivo-movil{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -9,6 +10,24 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap">
   <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <script>
+    // Interfaz móvil (clase "movil" en <html>): en un teléfono según el user agent, que el
+    // servidor ya marcó y no cambia al girar la pantalla, o en una ventana angosta.
+    // Avisa con el evento "cambio-modo" para que los scripts de la página se ajusten.
+    (() => {
+      const html = document.documentElement;
+      const porDispositivo = html.hasAttribute("data-dispositivo-movil");
+      const angosta = window.matchMedia("(max-width: 720px)");
+      const aplicar = () => {
+        const movil = porDispositivo || angosta.matches;
+        if (movil === html.classList.contains("movil")) return;
+        html.classList.toggle("movil", movil);
+        window.dispatchEvent(new Event("cambio-modo"));
+      };
+      angosta.addEventListener("change", aplicar);
+      aplicar();
+    })();
+  </script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
 {% block body %}{% endblock %}
