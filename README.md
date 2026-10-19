@@ -54,6 +54,15 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   ```bash
   uv run proyecto-pruebas
   ```
+- **Levantar la aplicación web (FastAPI + Jinja2, en http://127.0.0.1:8000):**
+
+  Los modelos entrenados no se versionan (`training/models/` está en `.gitignore`), por lo que primero se debe generar el modelo de M02:
+  ```bash
+  uv run --group jupyter python training/train_m02.py
+  uv run proyecto-pruebas-api
+  ```
+  - Interfaz: `/` (inicio con los tres modelos), `/m02` (formulario de M02) y `/m01`, `/m03` (vistas previas, aún sin campos).
+  - API: `POST /predict/m02` (presión arterial sistólica estimada). Entradas inválidas devuelven `400` con el detalle de cada campo. Documentación interactiva en `/docs`.
 - **Correr las pruebas (pytest):**
   ```bash
   uv run pytest
@@ -66,7 +75,11 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
 ## Estructura del repositorio.
 - `README.md`: documentación del proyecto.
 - `pyproject.toml` / `uv.lock`: dependencias del proyecto (ver nota abajo).
-- `src/`: código fuente de la aplicación.
+- `src/`: código fuente de la aplicación, organizado en MVC:
+  - `src/proyecto_pruebas/models/`: modelos (contratos de entrada/salida y lógica de predicción).
+  - `src/proyecto_pruebas/views/`: vistas (plantillas Jinja2 y archivos estáticos).
+  - `src/proyecto_pruebas/controllers/`: controladores (rutas de la API y de las páginas).
+  - `src/proyecto_pruebas/app.py`: aplicación FastAPI que conecta los controladores.
 - `tests/`: pruebas automatizadas (pytest).
 - `docs/`: documentación adicional del proyecto.
 - `evidencias/`: evidencia del plan de pruebas, diseño de pruebas, instalación y verificación del ambiente.

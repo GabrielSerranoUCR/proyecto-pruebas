@@ -7,14 +7,20 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "fastapi>=0.146.0",
+    "jinja2>=3.1.6",
+    "joblib>=1.6.0",
+    "pandas>=3.0.6",
     "python-dotenv>=1.2.3",
     "scikit-learn>=1.9.0",
     "scipy>=1.18.1",
     "supabase>=2.31.0",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]
 proyecto-pruebas = "proyecto_pruebas.main:main"
+proyecto-pruebas-api = "proyecto_pruebas.app:run"
 
 [build-system]
 requires = ["uv_build>=0.12.9,<0.13.0"]

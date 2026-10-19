@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block body_class %}pagina-modelo{% endblock %}
+
+{% block body %}
+<div class="fondo" style="background-image: url('{{ url_for('static', path=fondo) }}')" aria-hidden="true"></div>
+<main class="modelo">
+  <header class="modelo-header">
+    <a class="volver" href="/" aria-label="Volver al inicio">&larr;</a>
+    <h1>{{ titulo }}</h1>
+  </header>
+  <p class="sub">{{ descripcion }}</p>
+
+  <div class="modelo-layout">
+    <form id="form" class="tarjeta"{% if endpoint %} data-endpoint="{{ endpoint }}"{% endif %} novalidate>
+      {% for grupo in grupos %}
+      <fieldset>
+        <legend><span class="num">{{ "%02d" | format(loop.index) }}</span>{{ grupo.titulo }}</legend>
+        <div class="grid">
+          {% for campo in grupo.campos %}
+          <label class="campo">
+            <span>{{ campo.label }}</span>
+            {% if campo.options %}
+            <select name="{{ campo.name }}" data-type="int">
+              {% for value, label in campo.options %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input name="{{ campo.name }}" type="number" required
+                   data-type="{{ 'int' if campo.integer else 'float' }}"
+                   min="{{ campo.min }}" max="{{ campo.max }}" step="{{ 1 if campo.integer else 'any' }}"
+                   {% if campo.min_exclusive %}data-min-exclusive{% endif %}>
+            {% endif %}
+            <small class="campo-error" hidden></small>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      {% else %}
+      <div class="vista-previa" aria-hidden="true"></div>
+      {% endfor %}
+      <div class="form-pie">
+        <button type="submit"{% if not endpoint %} disabled{% endif %}>Calcular predicción</button>
+        {% if endpoint %}<p class="meta">Todos los campos son obligatorios.</p>{% endif %}
+      </div>
+    </form>
+
+    <aside id="result" class="tarjeta resultado">
+      <h2>Resultado</h2>
+      <div id="result-body" aria-live="polite">
+        <p class="meta">{% if endpoint %}Complete el formulario y presione «Calcular predicción».{% else %}Este modelo aún no está disponible.{% endif %}</p>
+      </div>
+      <section class="modelo-info" aria-labelledby="info-titulo">
+        <h3 id="info-titulo">Sobre el modelo</h3>
+        <dl>
+          <dt>Algoritmo</dt><dd>{{ algoritmo }}</dd>
+        </dl>
+      </section>
+    </aside>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{% if endpoint %}
+<script src="{{ url_for('static', path='dropdown.js') }}"></script>
+<script src="{{ url_for('static', path='predict.js') }}"></script>
+{% endif %}
+{% endblock %}
