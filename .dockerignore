@@ -1,0 +1,16 @@
+.git
+.github
+.idea
+.venv
+.pytest_cache
+**/__pycache__
+**/.DS_Store
+**/.ipynb_checkpoints
+.env
+.env.*
+# Se generan dentro de la imagen
+training/models
+docs
+evidencias
+supabase
+tests

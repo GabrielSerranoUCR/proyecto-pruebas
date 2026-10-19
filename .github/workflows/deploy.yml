@@ -1,0 +1,68 @@
+# Despliegue continuo: en cada push a main se revisa el código, se construye la imagen
+# (entrenando los modelos) en GitHub, se publica en GHCR y se pide a Coolify que la actualice.
+# El servidor de Coolify solo descarga la imagen y reinicia el contenedor; no construye nada.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un solo despliegue a la vez; si llega otro push, el anterior en curso se cancela
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+env:
+  # GHCR exige el nombre en minúsculas
+  IMAGE: ghcr.io/gabrielserranoucr/proyecto-pruebas
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+      - run: uv sync --frozen
+      - run: uv run pylint src
+
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          # latest es la que despliega Coolify; el sha permite volver a una versión anterior
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Desplegar en Coolify
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            --request GET "$COOLIFY_WEBHOOK" \
+            --header "Authorization: Bearer $COOLIFY_TOKEN"
