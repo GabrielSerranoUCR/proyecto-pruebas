@@ -1,0 +1,34 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [main, dev, "feature/**", "fix/**"]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+
+      - name: Install dependencies
+        run: uv sync --group jupyter
+
+      - name: Train and generate ML model artifacts
+        run: |
+          uv run python training/train_m02.py
+          uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
+          cd training/notebooks
+          uv run jupyter nbconvert --to notebook --execute --output-dir /tmp Aprobacion_de_curso_training_model.ipynb
+
+      - name: Run automated test suite with coverage
+        run: |
+          uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing --cov-report=xml:coverage.xml
