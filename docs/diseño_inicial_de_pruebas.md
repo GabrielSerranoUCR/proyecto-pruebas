@@ -25,11 +25,11 @@ El diseño inicial de pruebas se construye a partir de las funcionalidades ident
 
 Los parámetros de entrada considerados para cada modelo son los siguientes:
 
-- **M01 (aprobación de curso, educación, binario):** edad (`age`), ausencias (`absences`), tiempo de estudio (`studytime`), notas de evaluaciones (`G1`, `G2`, `Homework`, `Quizzes`), reprobaciones previas (`failures`), apoyo escolar/familiar (`schoolsup`, `famsup`). La salida esperada corresponde a una clasificación binaria 0/1 (Reprobado/Aprobado) y una probabilidad.
-- **M02 (presión arterial estimada, salud, regresión):** sexo (`male`), edad (`age`), educación (`education`), fumador actual (`currentSmoker`), cigarrillos por día (`cigsPerDay`), medicación para presión (`BPMeds`), accidente cerebrovascular previo (`prevalentStroke`), hipertensión previa (`prevalentHyp`), diabetes (`diabetes`), colesterol total (`totChol`), índice de masa corporal (`BMI`), frecuencia cardíaca (`heartRate`) y glucosa (`glucose`). La salida corresponde a un valor numérico de presión arterial sistólica (`sysBP` en mmHg), redondeado a 2 decimales.
-- **M03 (riesgo de morosidad, finanzas, multiclase):** ingresos del solicitante (`ApplicantIncome`), co-solicitante (`CoapplicantIncome`), monto solicitado (`LoanAmount`), plazo (`Loan_Amount_Term`), historial crediticio (`Credit_History`), área de propiedad (`Property_Area`), estado civil (`Married`), dependientes (`Dependents`), educación (`Education`) y empleo por cuenta propia (`Self_Employed`). La salida corresponde a una de las clases de riesgo: bajo, medio o alto.
+- **M01 (aprobación de curso, educación, binario):** sexo (`sex`), edad (`age`, 15 a 22 años), tamaño familiar (`famsize`), escolaridad de madre y padre (`Medu`, `Fedu`), cursos reprobados (`failures`), ausencias (`absences`, 0 a 93), motivo de elección (`reason`), apoyo escolar y familiar (`schoolsup`, `famsup`), preescolar (`nursery`), intención de educación superior (`higher`), internet en casa (`internet`), actividades extracurriculares (`activities`), tiempo libre (`freetime`), consumo de alcohol entre semana (`Dalc`) y estado de salud (`health`). La salida esperada corresponde a una clasificación binaria 0/1 (`No aprueba` / `Aprueba`) y una probabilidad estimada de aprobar.
+- **M02 (presión arterial estimada, salud, regresión):** sexo (`male`), edad (`age`, 1 a 120 años), educación (`education`), fumador actual (`currentSmoker`), cigarrillos por día (`cigsPerDay`), medicación para presión (`BPMeds`), accidente cerebrovascular previo (`prevalentStroke`), hipertensión previa (`prevalentHyp`), diabetes (`diabetes`), colesterol total (`totChol`), índice de masa corporal (`BMI`), frecuencia cardíaca (`heartRate`) y glucosa (`glucose`). La salida corresponde a un valor numérico de presión arterial sistólica (`sysBP` en mmHg), redondeado a 2 decimales.
+- **M03 (riesgo de morosidad, finanzas, multiclase):** sexo (`Gender`), estado civil (`Married`), dependientes (`Dependents`), educación (`Education`), empleo por cuenta propia (`Self_Employed`), ingresos del solicitante (`ApplicantIncome`), ingresos del codeudor (`CoapplicantIncome`), monto solicitado (`LoanAmount`), plazo (`Loan_Amount_Term`), historial crediticio (`Credit_History`) y zona de propiedad (`Property_Area`). La salida corresponde a una de las clases de riesgo: `bajo`, `medio` o `alto`.
 
-Para M02 (y M01) se establece como regla de validación que la edad debe ser un entero entre 1 y 120, ambos inclusive. Los valores fuera de ese rango deben ser rechazados por la interfaz.
+Para M02 se establece como regla de validación que la edad debe ser un entero entre 1 y 120 (y para M01 entre 15 y 22), ambos inclusive. Los valores fuera de ese rango deben ser rechazados tanto por la interfaz como por el contrato de la API.
 
 | ID | Funcionalidad | Descripción | Precondiciones | Datos de entrada | Procedimiento | Resultado esperado | Técnica | Tipo | Prioridad |
 |---|---|---|---|---|---|---|---|---|---|
@@ -115,9 +115,9 @@ La cobertura negativa contempla entradas inválidas, campos faltantes, tipos inc
 
 | Categoría | ¿Aplica? | Justificación / caso asociado |
 |---|---|---|
-| Rendimiento | No, en esta etapa | Las pruebas de carga o rendimiento bajo volumen alto de solicitudes quedan fuera del alcance inicial. |
-| Confiabilidad | Sí | CP-27 verifica el comportamiento ante indisponibilidad de la base de datos. |
-| Seguridad | Sí | CP-16 y CP-17 verifican entradas maliciosas y exposición de información sensible. |
-| Usabilidad | Sí | CP-28 evalúa manualmente la claridad del formulario para un usuario nuevo. |
-| Mantenibilidad | Sí, de forma indirecta | El análisis estático con Pylint aporta evidencia sobre la calidad y mantenibilidad del código. |
-| Compatibilidad | No, en esta etapa | No se han definido navegadores o dispositivos objetivo para pruebas de compatibilidad. |
+| Rendimiento básico | Sí (latencia por solicitud) | Se mide el tiempo de respuesta en escenarios representativos (registrado en `duracion_ms` por el middleware de logs), verificando respuestas inferiores a 100 ms en inferencia local. Las pruebas de estrés bajo concurrencia masiva quedan fuera de alcance. |
+| Confiabilidad | Sí | CP-27 verifica el comportamiento *fail-soft* ante indisponibilidad de la base de datos Supabase. |
+| Seguridad | Sí | CP-16 y CP-17 verifican el rechazo de entradas maliciosas y la no exposición de stack traces, rutas internas o credenciales. |
+| Usabilidad | Sí | CP-28 evalúa manualmente la claridad de los formularios y mensajes de validación para un usuario nuevo. |
+| Mantenibilidad | Sí | El análisis estático con Pylint (calificación 10.00/10) y la arquitectura MVC aportan evidencia de mantenibilidad. |
+| Compatibilidad | Sí (responsividad básica) | Detección de dispositivos móviles (`es_movil`) y adaptación de columnas en la interfaz web. |
