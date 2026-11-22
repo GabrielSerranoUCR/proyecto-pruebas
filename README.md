@@ -1,115 +1,205 @@
-# Pruebas de Software
+# Proyecto Integrador — Pruebas de Software (CI0142)
 
-## Descripción
-La siguiente aplicación es un sistema web bajo prueba (SUT) organizado bajo el patrón Modelo-Vista-Controlador (MVC) con FastAPI, Jinja2, modelos de Machine Learning (`scikit-learn`) y persistencia en PostgreSQL mediante Supabase. Integra tres modelos predictivos:
-- **M01 — Aprobación de curso** (Educación, clasificación binaria).
-- **M02 — Presión arterial estimada** (Salud, regresión lineal regularizada Ridge).
-- **M03 — Riesgo de morosidad** (Finanzas, clasificación multiclase con Random Forest).
+**Universidad de Costa Rica** · Escuela de Ciencias de la Computación e Informática (ECCI)  
+**Docente:** Minor Sandí Salazar · **Ciclo:** II-2026
 
-## Integrantes del equipo
-- Angel Mena Coudin | C34789
-- Gabriel Serrano Rojas | C17497
-- Juan José Víquez Ríos | C38567
-- Josué Torres Sibaja | C37853
-- Rolando Villavicencio González | C28489
+---
 
-## Objetivo del proyecto
-El objetivo del proyecto es someter la aplicación a un proceso de pruebas, aplicando de forma práctica los conocimientos, estándares, modelos y herramientas de las pruebas de software. Esto incluye principios de pruebas, gestión del proceso de pruebas, verificación y validación, entre otros conceptos clave para evaluar y garantizar la calidad del sistema.
+## Descripción del Sistema Bajo Prueba (SUT)
 
-## Preparación del ambiente
+Esta aplicación constituye el Sistema Bajo Prueba (SUT) desarrollado para el curso **Pruebas de Software (CI0142)**. Implementa una arquitectura web bajo el patrón **Modelo-Vista-Controlador (MVC)** utilizando **FastAPI**, plantillas **Jinja2**, modelos predictivos de **Machine Learning (`scikit-learn`)** y persistencia de registros de ejecución en **PostgreSQL (Supabase)**, con integración y despliegue continuo (**GitHub Actions + Docker + Coolify**).
 
-El proyecto usa UV como python/package manager, por lo que no es necesario instalar Python ni crear el virtual enviroment ya que UV lo hace automáticamente.
+### Modelos de Machine Learning Integrados
 
-1. Instalar uv:
+| ID | Sector | Modelo | Tipo y Algoritmo | Vista Web | Endpoint API | Contrato |
+|---|---|---|---|---|---|---|
+| **M01** | Educación | Aprobación de curso | Clasificación binaria (Regresión Logística) | `/m01` | `POST /predict/m01` | [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md) |
+| **M02** | Salud | Presión arterial estimada | Regresión (`Ridge Regression` con `StandardScaler`) | `/m02` | `POST /predict/m02` | [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) |
+| **M03** | Finanzas | Riesgo de morosidad | Clasificación multiclase (`Random Forest`: bajo, medio, alto) | `/m03` | `POST /predict/m03` | [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md) |
 
-   - Con pip (cualquier sistema operativo, requiere tener Python instalado):
-     ```bash
-     pip install uv
-     ```
-   - macOS/Linux:
+---
+
+## Integrantes del Equipo
+
+- **Angel Mena Coudin** | C34789
+- **Gabriel Serrano Rojas** | C17497
+- **Juan José Víquez Ríos** | C38567
+- **Josué Torres Sibaja** | C37853
+- **Rolando Villavicencio González** | C28489
+
+---
+
+## Objetivo del Proyecto
+
+Someter una solución mínima funcional con interfaz de usuario, API REST, modelos de Machine Learning y persistencia en base de datos a un proceso integral de pruebas de software. El proyecto abarca el análisis de riesgos, la planificación, el diseño mediante técnicas de caja negra (Partición de Equivalencia, Análisis de Valores Límite y Pruebas Basadas en Riesgo), la automatización multicapa con `pytest`, el análisis estático con `pylint`, la gestión del ciclo de vida de defectos en GitHub Issues, la matriz de trazabilidad y la emisión fundamentada de una decisión de liberación (**Go / No-Go**).
+
+---
+
+## Preparación del Ambiente
+
+El proyecto utiliza **[uv](https://docs.astral.sh/uv/)** como gestor de paquetes y entornos de Python, garantizando reproducibilidad exacta mediante `pyproject.toml` y `uv.lock`.
+
+1. **Instalar `uv`** (si no se encuentra instalado):
+   - **Linux / macOS:**
      ```bash
      curl -LsSf https://astral.sh/uv/install.sh | sh
      ```
-   - Windows:
+   - **Windows (PowerShell):**
      ```powershell
      powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
      ```
+   - **Con `pip`:**
+     ```bash
+     pip install uv
+     ```
 
-2. Clonar el repositorio y ubicarse en la carpeta del proyecto:
+2. **Clonar el repositorio y ubicarse en el directorio del proyecto:**
    ```bash
    git clone https://github.com/GabrielSerranoUCR/proyecto-pruebas.git
    cd proyecto-pruebas
    ```
-3. Sincronizar el ambiente. Esto descarga la versión de Python indicada en `.python-version`, crea el ambiente virtual en `.venv/` e instala todas las dependencias (incluidas las de desarrollo) definidas en `pyproject.toml`/`uv.lock`:
+
+3. **Sincronizar el ambiente virtual e instalar dependencias:**
+   Descarga automáticamente la versión de Python indicada en `.python-version` (`3.13`), crea el entorno `.venv/` e instala las dependencias de producción, desarrollo y entrenamiento:
    ```bash
-   uv sync
+   uv sync --group jupyter
    ```
-4. Copiar `.env.example` a `.env` y completar las variables de entorno necesarias:
+
+4. **Configurar las variables de entorno:**
+   Copiar la plantilla `.env.example` (que no contiene secretos) a `.env` y completar las credenciales de Supabase si se desea persistencia en la nube:
    ```bash
    cp .env.example .env
    ```
 
-## Instrucciones para ejecutar el proyecto
+---
 
-Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambiente virtual del proyecto sin necesidad de activarlo manualmente.
+## Instrucciones de Ejecución
 
-- **Correr la aplicación:**
-  ```bash
-  uv run proyecto-pruebas
-  ```
-- **Levantar la aplicación web (FastAPI + Jinja2, en http://127.0.0.1:8000):**
+### 1. Generar los artefactos de los modelos (`.joblib`)
 
-  Los modelos entrenados no se versionan (`training/models/` está en `.gitignore`), por lo que primero se deben generar los modelos:
-  ```bash
-  # M01: ejecutar completo el cuaderno training/notebooks/Aprobacion_de_curso_training_model.ipynb
-  uv run --group jupyter python training/train_m02.py
-  uv run --group jupyter python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
-  uv run proyecto-pruebas-api
-  ```
-  - Interfaz: `/` (inicio con los tres modelos) y los formularios `/m01`, `/m02` y `/m03`.
-  - API: `POST /predict/m01` (aprobación del curso), `POST /predict/m02` (presión arterial sistólica estimada) y `POST /predict/m03` (nivel de riesgo de morosidad). Entradas inválidas devuelven `400` con el detalle de cada campo. Los contratos completos están en [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md), [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md), y la documentación interactiva en `/docs`.
-- **Correr la batería de pruebas automatizadas y cobertura (pytest):**
-  ```bash
-  uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing
-  ```
-- **Correr el linter (pylint):**
-  ```bash
-  uv run pylint src
-  ```
+Por buenas prácticas, los binarios entrenados en `training/models/` no se versionan en Git (están excluidos en `.gitignore`). Antes de iniciar la API o ejecutar las pruebas por primera vez en local, genere los tres modelos con los siguientes comandos:
 
-## Registro de ejecuciones en Supabase
+```bash
+# Modelo M01 (ejecuta el cuaderno de entrenamiento y exporta el artefacto)
+cd training/notebooks && uv run jupyter nbconvert --to notebook --execute --output-dir /tmp Aprobacion_de_curso_training_model.ipynb && cd ../..
 
-La API guarda en Supabase cada solicitud a `/predict/<modelo>` (entrada, salida, estado HTTP y duración), incluidos los errores 400, 404 y 500. Cada modelo tiene su propia tabla: `logs_m01`, `logs_m02` y `logs_m03`.
+# Modelo M02 (entrena Ridge Regression y exporta blood_pressure_ridge_model.joblib)
+uv run python training/train_m02.py
 
-1. Ejecutar [`supabase/logs_modelos.sql`](supabase/logs_modelos.sql) en el SQL Editor de Supabase. El script crea las tablas, habilita RLS y permite únicamente inserciones con la clave `anon`.
-2. Configurar en `.env`:
+# Modelo M03 (entrena Random Forest y exporta m03_riesgo_morosidad.joblib)
+uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
+```
+
+### 2. Levantar el servidor web y la API (FastAPI + Jinja2)
+
+```bash
+uv run proyecto-pruebas-api
+```
+
+Una vez iniciado en `http://127.0.0.1:8000`:
+- **Interfaz de usuario:**
+  - `http://127.0.0.1:8000/` — Página de inicio con selección de los tres modelos.
+  - `http://127.0.0.1:8000/m01` — Formulario de aprobación de curso (M01).
+  - `http://127.0.0.1:8000/m02` — Formulario de presión arterial estimada (M02).
+  - `http://127.0.0.1:8000/m03` — Formulario de riesgo de morosidad (M03).
+- **Documentación interactiva OpenAPI (Swagger UI):**
+  - `http://127.0.0.1:8000/docs`
+
+### 3. Ejecución mediante contenedor Docker
+
+El `Dockerfile` multi-etapa entrena automáticamente los tres modelos durante la primera fase de construcción y empaqueta únicamente los artefactos `.joblib` y la aplicación en la imagen final:
+
+```bash
+docker build -t proyecto-pruebas .
+docker run --rm -p 8000:8000 --env-file .env proyecto-pruebas
+```
+
+---
+
+## Ejecución de Pruebas y Análisis de Calidad
+
+### Batería de pruebas automatizadas (`pytest`)
+
+La suite consta de **32 pruebas automatizadas** que verifican las cuatro capas del sistema (Vistas HTML, Controladores de API, Modelos ML y Persistencia en Supabase), alcanzando un **90% de cobertura de código**:
+
+```bash
+# Ejecutar todas las pruebas con salida detallada y tabla de cobertura
+uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing
+```
+
+| Módulo de prueba | Alcance y casos verificados |
+|---|---|
+| `tests/test_api_m01.py` | Contrato positivo (`CP-18`, `CP-19`), validación de campos faltantes, rangos de edad (`15–22`) y análisis de valores límite en ausencias (`0–93`). |
+| `tests/test_api_m02.py` | Contrato positivo (`CP-08`), redondeo a 2 decimales (`CP-20`), rango fisiológico (`CP-21`), validaciones negativas (`CP-09` a `CP-13`), límites de edad (`1–120`) y cigarrillos (`0–100`), y valores clínicos extremos (`CP-24`). |
+| `tests/test_api_m03.py` | Contrato multiclase (`CP-22`), campo obligatorio faltante (`CP-05`), categoría no permitida, ingreso extremo (`CP-23`) e ingreso negativo. |
+| `tests/test_integration.py` | Integración directa API $\to$ Modelo ML, despacho de registros de ejecución hacia Supabase (`CP-25`), resiliencia *fail-soft* ante caída de base de datos (`CP-27`) y fallback a terminal. |
+| `tests/test_security_routes.py` | Rutas o modelos inexistentes HTTP 404 (`CP-14`), métodos no permitidos HTTP 405 (`CP-15`) y no divulgación de *stack traces* ni rutas internas ante errores HTTP 500 (`CP-17`). |
+| `tests/test_ui_views.py` | Renderizado de la página principal (`/`) y despliegue de los formularios específicos en `/m01` (`CP-01`), `/m02` (`CP-02`) y `/m03`. |
+
+### Análisis estático de código (`pylint`)
+
+```bash
+uv run pylint src
+```
+
+---
+
+## Persistencia en Supabase y Diseño *Fail-Soft*
+
+El middleware `LogMiddleware` intercepta cada consulta a `/predict/<modelo>` y registra en segundo plano (`BackgroundTask`) la entrada, la salida, el código HTTP, la duración en milisegundos y el `id_ejecucion` (UUID v4) en la tabla correspondiente de Supabase (`logs_m01`, `logs_m02` o `logs_m03`).
+
+1. Ejecutar el script [`supabase/logs_modelos.sql`](supabase/logs_modelos.sql) en el *SQL Editor* de Supabase. El script crea las tablas, habilita *Row Level Security (RLS)* y restringe la clave pública `anon` exclusivamente a operaciones `INSERT` (`returning="minimal"`), protegiendo la confidencialidad de los registros históricos.
+2. Definir en `.env`:
    ```env
-   SUPABASE_URL=...
-   SUPABASE_KEY=...        # clave anon
+   SUPABASE_URL=https://<proyecto>.supabase.co
+   SUPABASE_KEY=<clave_anon_publica>
    SUPABASE_LOGS_ENABLED=true
    ```
-3. Reiniciar la API con `uv run proyecto-pruebas-api`.
+3. **Comportamiento ante fallos (`CP-27`):** Si Supabase no está disponible, faltan las credenciales o `SUPABASE_LOGS_ENABLED=false`, la API **no interrumpe la predicción**: responde normalmente al usuario y vuelca el registro estructurado en la salida estándar del servidor.
 
-Si Supabase no está disponible, la predicción se devuelve igual y el registro se escribe en la terminal del proceso (caso CP-27). Lo mismo ocurre si faltan `SUPABASE_URL`/`SUPABASE_KEY` o si se usa `SUPABASE_LOGS_ENABLED=false`: no se intenta conectar y el log se imprime en consola. Las rutas de modelos desconocidos (por ejemplo `/predict/m99`) solo se registran en la terminal, porque no tienen tabla asociada.
+---
 
-## Estructura del repositorio.
-- `README.md`: documentación del proyecto.
-- `pyproject.toml` / `uv.lock`: dependencias del proyecto (ver nota abajo).
-- `src/`: código fuente de la aplicación, organizado en MVC:
-  - `src/proyecto_pruebas/models/`: modelos (contratos de entrada/salida y lógica de predicción).
-  - `src/proyecto_pruebas/views/`: vistas (plantillas Jinja2 y archivos estáticos).
-  - `src/proyecto_pruebas/controllers/`: controladores (rutas de la API y de las páginas).
-  - `src/proyecto_pruebas/app.py`: aplicación FastAPI que conecta los controladores.
-- `tests/`: batería de 32 pruebas automatizadas (`pytest`) que cubren contratos de API, límites, integración con modelos, persistencia en Supabase, seguridad y vistas HTML.
-- `docs/`: documentación técnica y artefactos de prueba del proyecto:
-  - [`docs/plan_de_pruebas.md`](docs/plan_de_pruebas.md): Plan de Pruebas actualizado.
-  - [`docs/diseño_inicial_de_pruebas.md`](docs/diseño_inicial_de_pruebas.md): Diseño de casos de prueba (`CP-01` a `CP-28`) y técnicas aplicadas.
-  - [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md), [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md): Especificación de contratos de la API.
-  - [`docs/Informe_Etapa_1.md`](docs/Informe_Etapa_1.md): Informe de la primera etapa.
-  - [`docs/Informe_Etapa_3.md`](docs/Informe_Etapa_3.md): Informe final con matriz de trazabilidad, ciclo de defectos (`DEF-001` a `DEF-005`), métricas consolidadas y decisión Go/No-Go.
-- `evidencias/`: evidencia del plan de pruebas, diseño de pruebas, instalación y verificación del ambiente.
+## Estructura del Repositorio
 
-**Nota sobre requirements.txt:** el proyecto usa `uv` como gestor de dependencias, por lo que no se incluye un `requirements.txt`. Las dependencias se declaran en `pyproject.toml` y quedan fijadas en `uv.lock`, que cumple el mismo propósito.
+```text
+proyecto-pruebas/
+├── .github/workflows/
+│   ├── deploy.yml              # CI/CD: lint + pytest + build Docker (GHCR) + deploy en Coolify
+│   └── tests.yml               # CI: entrenamiento de modelos + ejecución de pytest y cobertura
+├── docs/
+│   ├── Informe_Etapa_1.md      # Informe de la Etapa 1 (Planificación y ambiente)
+│   ├── Informe_Etapa_1.pdf     # Versión PDF del Informe de la Etapa 1
+│   ├── Informe_Etapa_3.md      # Informe Final: Ejecución, Defectos, Trazabilidad y Decisión Go/No-Go
+│   ├── contrato_api_m01.md     # Especificación del contrato REST para M01
+│   ├── contrato_api_m02.md     # Especificación del contrato REST para M02
+│   ├── contrato_api_m03.md     # Especificación del contrato REST para M03
+│   ├── diseño_inicial_de_pruebas.md  # Casos de prueba (CP-01 a CP-28), datos y técnicas
+│   └── plan_de_pruebas.md      # Alcance, riesgos, estrategia, recursos, cronograma y métricas
+├── evidencias/                 # Capturas y evidencias de verificación de ambiente (Etapa 1)
+├── src/proyecto_pruebas/
+│   ├── controllers/            # Controladores FastAPI: api_m01.py, api_m02.py, api_m03.py, pages.py
+│   ├── models/                 # Modelos MVC y contratos Pydantic: m01.py, m02.py, m03.py, errores.py
+│   ├── views/                  # Plantillas Jinja2 (templates/) y activos CSS/JS/Imágenes (static/)
+│   ├── app.py                  # Instancia FastAPI, ruteo y manejadores globales de errores HTTP
+│   ├── logs_supabase.py        # Cliente Supabase y persistencia fail-soft
+│   └── middleware_logs.py      # Middleware de auditoría de tiempos y resultados por solicitud
+├── supabase/
+│   └── logs_modelos.sql        # Esquema DDL de tablas de logs e índices con políticas RLS
+├── tests/                      # Batería de 32 pruebas automatizadas con pytest
+├── training/                   # Datasets crudos, cuadernos Jupyter y scripts de entrenamiento ML
+├── .env.example                # Plantilla de variables de entorno sin secretos
+├── Dockerfile                  # Construcción multi-etapa (entrenamiento + servidor Uvicorn)
+├── pyproject.toml              # Definición del proyecto y dependencias gestionadas con uv
+└── uv.lock                     # Archivo de bloqueo de versiones exactas
+```
 
-## Enlaces de interes
-- [Plan de trabajo](https://docs.google.com/spreadsheets/d/1IGmu08bjfda4OAQALcscwWfYLhLuleYi6xQ7R213txM/edit?usp=sharing)
+---
+
+## Documentación y Artefactos de Prueba
+
+- **[Plan de Pruebas (`docs/plan_de_pruebas.md`)](docs/plan_de_pruebas.md)**
+- **[Diseño de Casos de Prueba (`docs/diseño_inicial_de_pruebas.md`)](docs/diseño_inicial_de_pruebas.md)**
+- **[Informe de la Etapa 1 (`docs/Informe_Etapa_1.md`)](docs/Informe_Etapa_1.md)**
+- **[Informe Final — Etapa 3 (`docs/Informe_Etapa_3.md`)](docs/Informe_Etapa_3.md)** *(incluye Matriz de Trazabilidad, Ciclo de Defectos `DEF-001` a `DEF-005`, Métricas y Decisión Go/No-Go)*
+- **[Registro de Defectos en GitHub Issues](https://github.com/GabrielSerranoUCR/proyecto-pruebas/issues?q=is%3Aissue)**
+- **[Plan de Trabajo del Equipo (Google Sheets)](https://docs.google.com/spreadsheets/d/1IGmu08bjfda4OAQALcscwWfYLhLuleYi6xQ7R213txM/edit?usp=sharing)**
