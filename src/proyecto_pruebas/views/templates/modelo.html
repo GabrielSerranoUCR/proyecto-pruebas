@@ -70,6 +70,24 @@
         <dl>
           <dt>Algoritmo</dt><dd>{{ algoritmo }}</dd>
         </dl>
+        {% if pesos %}
+        <details class="pesos-panel" open>
+          <summary>Pesos de las variables (%)</summary>
+          <ul class="pesos-lista" aria-label="Importancia relativa de las variables del modelo">
+            {% for p in pesos %}
+            <li class="peso-item">
+              <div class="peso-cabecera">
+                <span class="peso-etiqueta">{{ p.etiqueta }}</span>
+                <span class="peso-valor">{{ p.porcentaje }} %</span>
+              </div>
+              <div class="peso-pista" aria-hidden="true">
+                <div class="peso-barra" style="width: {{ p.ancho }}%"></div>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+        </details>
+        {% endif %}
       </section>
       {% if endpoint %}
       {# Solo en móvil, donde el resultado se muestra como una pantalla aparte (predict.js) #}

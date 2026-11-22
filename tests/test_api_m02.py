@@ -46,6 +46,12 @@ def test_cp08_predict_m02_exitoso_contrato_completo(client: TestClient, valid_m0
     assert "RMSE" in metrica and metrica["RMSE"] > 0
     assert "R2" in metrica and 0 < metrica["R2"] <= 1.0
 
+    # Pesos relativos de las variables
+    assert "pesos" in data
+    assert isinstance(data["pesos"], dict)
+    assert len(data["pesos"]) == 13
+    assert abs(sum(data["pesos"].values()) - 1.0) < 0.01
+
 
 def test_cp09_predict_m02_campo_faltante(client: TestClient, valid_m02_payload: dict):
     """

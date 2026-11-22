@@ -83,7 +83,7 @@ class M01Metrica(BaseModel):
 
 
 class M01Output(BaseModel):
-    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica e id_ejecucion."""
+    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica, pesos e id."""
 
     id_ejecucion: str = Field(description="Identificador único (UUID v4) de la ejecución.")
     fecha: str = Field(description="Fecha de la ejecución (AAAA-MM-DD).")
@@ -96,6 +96,9 @@ class M01Output(BaseModel):
     )
     descripcion_probabilidad: str = Field(description="Qué representa el campo probabilidad.")
     metrica: M01Metrica = Field(description="Métricas del modelo sobre el conjunto de prueba.")
+    pesos: dict[str, float] = Field(
+        description="Peso relativo normalizado (0 a 1) de cada variable en el modelo."
+    )
 
 
 @lru_cache(maxsize=1)
@@ -105,6 +108,12 @@ def load_m01_artifact() -> dict:
     if not model_path.exists():
         raise FileNotFoundError(f"No se encontró el artefacto del modelo en: {model_path}")
     return joblib.load(model_path)
+
+
+def obtener_pesos() -> dict[str, float]:
+    """Devuelve el diccionario ordenado de pesos relativos de las variables del modelo M01."""
+    artifact = load_m01_artifact()
+    return dict(artifact.get("weights", {}))
 
 
 def predict(payload: M01Input) -> M01Output:
@@ -130,4 +139,5 @@ def predict(payload: M01Input) -> M01Output:
         probabilidad=round(probability, 4),
         descripcion_probabilidad="Probabilidad de aprobar",
         metrica=M01Metrica(**artifact["metrics"]),
+        pesos=obtener_pesos(),
     )

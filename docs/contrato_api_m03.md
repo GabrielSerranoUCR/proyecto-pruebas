@@ -11,13 +11,13 @@ Con la aplicación en ejecución (`uv run proyecto-pruebas-api`), la misma espec
 | URL | `http://127.0.0.1:8000/predict/m03` |
 | Método | `POST` |
 | Encabezado | `Content-Type: application/json` |
-| Cuerpo | Objeto JSON con los 11 parámetros del modelo |
+| Cuerpo | Objeto JSON con los 10 parámetros del modelo (excluyendo la variable dominante `Credit_History`) |
 | Autenticación | No aplica (sin autenticación, por lo que no se usa el código 401) |
 | Predicción | Nivel de riesgo de la solicitud de préstamo: `bajo`, `medio` o `alto` |
 
 ## Parámetros de entrada
 
-Los **11 campos son obligatorios**. Los nombres y los valores coinciden con las columnas del conjunto de datos usado en el entrenamiento (`training/notebooks/m03_riesgo_morosidad/entrenamiento.py`). A diferencia de M01 y M02, las variables categóricas se envían **como texto**, con los mismos valores del conjunto de datos, porque el modelo exportado hace su propia codificación. Así las filas de la hoja "Mor Riesgo Test" se pueden enviar al API sin transformarlas (salvo `Dependents` = `"3+"`, que se envía como `3`).
+Los **10 campos son obligatorios** (se excluyó `Credit_History` del entrenamiento y del contrato porque concentraba el 73.7 % de la información mutua y más del 53 % del peso del modelo, monopolizando la predicción). Los nombres y los valores coinciden con las columnas del conjunto de datos usado en el entrenamiento (`training/notebooks/m03_riesgo_morosidad/entrenamiento.py`). A diferencia de M01 y M02, las variables categóricas se envían **como texto**, con los mismos valores del conjunto de datos, porque el modelo exportado hace su propia codificación.
 
 | Campo | Tipo | Regla de validación | Valores permitidos | Descripción |
 |---|---|---|---|---|
@@ -30,16 +30,15 @@ Los **11 campos son obligatorios**. Los nombres y los valores coinciden con las 
 | `CoapplicantIncome` | número | 0 ≤ valor ≤ 100000 | 0 a 100000 (0 si no hay codeudor) | Ingreso mensual del codeudor, en dólares (USD) |
 | `LoanAmount` | número | 0 < valor ≤ 1000 | mayor que 0, hasta 1000 | Monto del préstamo, en miles de dólares (USD) |
 | `Loan_Amount_Term` | número | 0 < valor ≤ 480 | mayor que 0, hasta 480 | Plazo del préstamo, en meses |
-| `Credit_History` | entero | 0 ≤ valor ≤ 1 | `1` = cumple las pautas, `0` = no | Historial crediticio |
 | `Property_Area` | cadena | Uno de los valores permitidos | `"Urban"`, `"Semiurban"`, `"Rural"` | Zona de la propiedad |
 
 ### Reglas generales de validación
 
 - **Tipos estrictos:** no se convierten valores automáticamente. Una cadena en un campo numérico (`"5000"`), un número en un campo de texto, un booleano (`true`/`false`) o `null` se rechazan con 400.
 - **Valores de texto:** distinguen mayúsculas y minúsculas (`"male"` o `"yes"` se rechazan). El modelo ignoraría en silencio una categoría desconocida, por eso la API la rechaza.
-- **Enteros:** `Dependents` y `Credit_History` no aceptan decimales. Los campos de tipo número aceptan enteros y decimales.
+- **Enteros:** `Dependents` no acepta decimales. Los campos de tipo número aceptan enteros y decimales.
 - **Faltantes:** aunque el modelo puede imputar valores faltantes, la API no acepta campos vacíos ni `null` y responde 400.
-- **Campos adicionales:** cualquier campo que no esté en la tabla se rechaza con 400 (`"Campo no permitido"`). Esto incluye `Loan_ID` y `Loan_Status`.
+- **Campos adicionales:** cualquier campo que no esté en la tabla se rechaza con 400 (`"Campo no permitido"`). Esto incluye `Loan_ID`, `Loan_Status` y `Credit_History`.
 - **Cuerpo:** debe ser un objeto JSON válido; un JSON mal formado, un cuerpo vacío o un arreglo se rechazan con 400.
 - **`CoapplicantIncome`:** la API no pregunta si hay codeudor. La interfaz muestra una pregunta propia ("¿Tiene codeudor?") que no se envía, y fija `CoapplicantIncome = 0` cuando la respuesta es "No".
 
@@ -51,8 +50,7 @@ curl -X POST http://127.0.0.1:8000/predict/m03 \
   -d '{
     "Gender": "Male", "Married": "Yes", "Dependents": 0, "Education": "Graduate",
     "Self_Employed": "No", "ApplicantIncome": 5720, "CoapplicantIncome": 0,
-    "LoanAmount": 110, "Loan_Amount_Term": 360, "Credit_History": 1,
-    "Property_Area": "Urban"
+    "LoanAmount": 110, "Loan_Amount_Term": 360, "Property_Area": "Urban"
   }'
 ```
 
@@ -61,14 +59,26 @@ curl -X POST http://127.0.0.1:8000/predict/m03 \
 ```json
 {
   "id_ejecucion": "d1ba0576-ecd2-46cf-ab47-e4b6da6f5709",
-  "fecha": "2026-10-18",
-  "hora": "20:22:07",
+  "fecha": "2026-11-22",
+  "hora": "16:25:06",
   "modelo": "M03",
-  "prediccion": "bajo",
-  "etiqueta": "Riesgo bajo",
-  "probabilidad": 0.185,
+  "prediccion": "medio",
+  "etiqueta": "Riesgo medio",
+  "probabilidad": 0.4312,
   "descripcion_probabilidad": "Probabilidad de rechazo",
-  "metrica": { "Accuracy": 0.813, "Precision": 0.8571, "Recall": 0.4737, "F1": 0.6102 }
+  "metrica": { "Accuracy": 0.6179, "Precision": 0.4, "Recall": 0.4737, "F1": 0.4337 },
+  "pesos": {
+    "Married": 0.258,
+    "Property_Area": 0.2309,
+    "Education": 0.203,
+    "LoanAmount": 0.1031,
+    "CoapplicantIncome": 0.0575,
+    "Self_Employed": 0.051,
+    "Gender": 0.0341,
+    "Loan_Amount_Term": 0.0323,
+    "Dependents": 0.0198,
+    "ApplicantIncome": 0.0103
+  }
 }
 ```
 
@@ -83,6 +93,7 @@ curl -X POST http://127.0.0.1:8000/predict/m03 \
 | `probabilidad` | número | Probabilidad estimada de rechazo, de 0 a 1, redondeada a 4 decimales (campo adicional) |
 | `descripcion_probabilidad` | cadena | Qué representa `probabilidad`: `"Probabilidad de rechazo"` (campo adicional) |
 | `metrica` | objeto | Métricas del clasificador de rechazo sobre el conjunto de prueba (`Accuracy`, `Precision`, `Recall`, `F1`) |
+| `pesos` | objeto | Peso relativo normalizado (0 a 1, suma = 1.0) de cada una de las 10 variables de entrada en el modelo |
 
 ### Cómo se obtiene el nivel
 

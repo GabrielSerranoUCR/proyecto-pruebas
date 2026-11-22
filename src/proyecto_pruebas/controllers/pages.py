@@ -11,6 +11,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from proyecto_pruebas.models import m01, m02, m03
 from proyecto_pruebas.models.m01 import M01Input
 from proyecto_pruebas.models.m02 import M02Input
 from proyecto_pruebas.models.m03 import M03Input
@@ -133,7 +134,8 @@ M01_GRUPOS = [
     ]),
 ]
 
-# Los valores son los del conjunto de datos; las etiquetas se muestran en español
+# Los valores son los del conjunto de datos; las etiquetas se muestran en español.
+# Se excluye Credit_History por ser una variable dominante que absorbía la predicción.
 SI_NO_M03 = [("No", "No"), ("Yes", "Sí")]
 M03_GRUPOS = [
     ("Solicitante", [
@@ -152,7 +154,6 @@ M03_GRUPOS = [
     ("Préstamo", [
         ("LoanAmount", "Monto del préstamo (miles de USD)", None),
         ("Loan_Amount_Term", "Plazo (meses)", None),
-        ("Credit_History", "¿Historial crediticio al día?", [(1, "Sí"), (0, "No")]),
         ("Property_Area", "Zona de la propiedad", [
             ("Urban", "Urbana"), ("Semiurban", "Semiurbana"), ("Rural", "Rural"),
         ]),
@@ -189,6 +190,25 @@ def build_grupos(schema_model: type[BaseModel], grupos: list) -> list[dict]:
     ]
 
 
+def build_pesos_vista(grupos: list, pesos: dict[str, float]) -> list[dict]:
+    """Prepara la lista ordenada de pesos de variables con su etiqueta en español para la UI."""
+    etiquetas = {
+        campo[0]: campo[1].replace("¿", "").replace("?", "")
+        for _, campos in grupos
+        for campo in campos
+    }
+    maximo = max(pesos.values(), default=1.0) or 1.0
+    return [
+        {
+            "nombre": nombre,
+            "etiqueta": etiquetas.get(nombre, nombre),
+            "porcentaje": round(valor * 100, 1),
+            "ancho": round((valor / maximo) * 100, 1),
+        }
+        for nombre, valor in pesos.items()
+    ]
+
+
 @router.get("/", response_class=HTMLResponse)
 def index(request: Request) -> HTMLResponse:
     """Página de inicio con los tres modelos."""
@@ -196,7 +216,7 @@ def index(request: Request) -> HTMLResponse:
 
 
 def render_modelo(request: Request, modelo_id: str, grupos: list | None = None,
-                  endpoint: str | None = None) -> HTMLResponse:
+                  endpoint: str | None = None, pesos: list | None = None) -> HTMLResponse:
     """Página de un modelo; sin grupos ni endpoint se muestra como vista previa."""
     modelo = MODELOS[modelo_id]
     return templates.TemplateResponse(request, "modelo.html", {
@@ -207,22 +227,26 @@ def render_modelo(request: Request, modelo_id: str, grupos: list | None = None,
         "columnas": modelo.get("columnas", 4),
         "grupos": grupos or [],
         "endpoint": endpoint,
+        "pesos": pesos or [],
     })
 
 
 @router.get("/m01", response_class=HTMLResponse)
 def page_m01(request: Request) -> HTMLResponse:
     """Formulario del modelo M01."""
-    return render_modelo(request, "M01", build_grupos(M01Input, M01_GRUPOS), "/predict/m01")
+    pesos = build_pesos_vista(M01_GRUPOS, m01.obtener_pesos())
+    return render_modelo(request, "M01", build_grupos(M01Input, M01_GRUPOS), "/predict/m01", pesos)
 
 
 @router.get("/m02", response_class=HTMLResponse)
 def page_m02(request: Request) -> HTMLResponse:
     """Formulario del modelo M02."""
-    return render_modelo(request, "M02", build_grupos(M02Input, M02_GRUPOS), "/predict/m02")
+    pesos = build_pesos_vista(M02_GRUPOS, m02.obtener_pesos())
+    return render_modelo(request, "M02", build_grupos(M02Input, M02_GRUPOS), "/predict/m02", pesos)
 
 
 @router.get("/m03", response_class=HTMLResponse)
 def page_m03(request: Request) -> HTMLResponse:
     """Formulario del modelo M03."""
-    return render_modelo(request, "M03", build_grupos(M03Input, M03_GRUPOS), "/predict/m03")
+    pesos = build_pesos_vista(M03_GRUPOS, m03.obtener_pesos())
+    return render_modelo(request, "M03", build_grupos(M03Input, M03_GRUPOS), "/predict/m03", pesos)

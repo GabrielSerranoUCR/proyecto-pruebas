@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -34,6 +35,10 @@ NIVELES = ("bajo", "medio", "alto")
 
 COLUMNA_ID = "Loan_ID"
 COLUMNA_OBJETIVO = "Loan_Status"
+# Credit_History acapara más del 53 % de la importancia total y monopoliza la decisión
+# (si vale 0 predice siempre riesgo alto sin importar ingresos ni monto; si vale 1,
+# casi siempre bajo). Se excluye para que el modelo evalúe el perfil financiero real.
+COLUMNA_DOMINANTE = "Credit_History"
 VALORES_OBJETIVO = {"Y", "N"}
 
 COLUMNAS_NUMERICAS = [
@@ -42,16 +47,43 @@ COLUMNAS_NUMERICAS = [
 ]
 COLUMNAS_CATEGORICAS = [
     "Gender", "Married", "Education", "Self_Employed",
-    "Property_Area", "Credit_History",
+    "Property_Area",
 ]
 
 
+def analizar_variables_dominantes(datos: pd.DataFrame, rechazo: pd.Series) -> pd.DataFrame:
+    """Evalúa la información mutua de todas las variables originales (incluida Credit_History)."""
+    candidatas = datos.drop(columns=[COLUMNA_ID, COLUMNA_OBJETIVO]).copy()
+    for col in candidatas.columns:
+        if not pd.api.types.is_numeric_dtype(candidatas[col]):
+            candidatas[col] = (
+                candidatas[col].fillna(candidatas[col].mode()[0]).astype("category").cat.codes
+            )
+        else:
+            candidatas[col] = candidatas[col].fillna(candidatas[col].median())
+
+    info = pd.Series(
+        mutual_info_classif(candidatas, rechazo, random_state=SEMILLA),
+        index=candidatas.columns,
+    ).sort_values(ascending=False)
+
+    proporcion = info / info.sum() if info.sum() > 0 else info
+    return pd.DataFrame({
+        "Informacion_mutua": info.round(4),
+        "Proporcion_info": proporcion.round(4),
+        "Estado": [
+            "Descartada (variable dominante)" if c == COLUMNA_DOMINANTE else "Seleccionada"
+            for c in info.index
+        ],
+    })
+
+
 def cargar_datos(ruta=RUTA_DATOS, hoja=HOJA_ENTRENAMIENTO):
-    """Lee la hoja de entrenamiento y devuelve (entradas, rechazo).
+    """Lee la hoja de entrenamiento y devuelve (entradas, rechazo, analisis_dominancia).
 
     Dependents mezcla enteros con el texto "3+"; se lleva a 3 para que la
-    columna quede numerica. Si Loan_Status trae algo distinto de Y/N se
-    detiene, porque la etiqueta rechazo dejaria de tener sentido.
+    columna quede numerica. Se descarta Loan_ID (identificador), Loan_Status
+    (objetivo) y Credit_History (variable dominante que absorbe la prediccion).
     """
     datos = pd.read_excel(ruta, sheet_name=hoja)
 
@@ -61,8 +93,9 @@ def cargar_datos(ruta=RUTA_DATOS, hoja=HOJA_ENTRENAMIENTO):
 
     datos["Dependents"] = pd.to_numeric(datos["Dependents"].replace("3+", 3))
     rechazo = (datos[COLUMNA_OBJETIVO] == "N").astype(int).rename("rechazo")
-    entradas = datos.drop(columns=[COLUMNA_ID, COLUMNA_OBJETIVO])
-    return entradas, rechazo
+    analisis = analizar_variables_dominantes(datos, rechazo)
+    entradas = datos.drop(columns=[COLUMNA_ID, COLUMNA_OBJETIVO, COLUMNA_DOMINANTE])
+    return entradas, rechazo, analisis
 
 
 def verificar_columnas(entradas):
@@ -75,13 +108,7 @@ def verificar_columnas(entradas):
 
 
 def crear_preprocesador():
-    """Imputacion, escalado y one-hot que viajan dentro del modelo exportado.
-
-    Credit_History va con las categoricas aunque sea 0/1: se imputa con el
-    valor mas frecuente, no con un promedio. handle_unknown="ignore" evita que
-    una categoria no vista detenga la prediccion; esa entrada queda en ceros
-    para su columna, asi que la validacion del contrato le toca a la API.
-    """
+    """Imputacion, escalado y one-hot que viajan dentro del modelo exportado."""
     numericas = Pipeline([
         ("imputar", SimpleImputer(strategy="median")),
         ("escalar", StandardScaler()),
@@ -105,13 +132,17 @@ def dividir(entradas, rechazo):
 
 
 def candidatos():
-    """Linea base y modelos a comparar, con hiperparametros fijos."""
+    """Linea base y modelos a comparar con balanceo de clases."""
     return {
         "Dummy": DummyClassifier(strategy="most_frequent"),
-        "Regresion logistica": LogisticRegression(max_iter=1000, random_state=SEMILLA),
-        "Arbol de decision": DecisionTreeClassifier(max_depth=4, random_state=SEMILLA),
+        "Regresion logistica": LogisticRegression(
+            max_iter=1000, class_weight="balanced", random_state=SEMILLA,
+        ),
+        "Arbol de decision": DecisionTreeClassifier(
+            max_depth=4, class_weight="balanced", random_state=SEMILLA,
+        ),
         "Random Forest": RandomForestClassifier(
-            n_estimators=200, max_depth=6, random_state=SEMILLA,
+            n_estimators=200, max_depth=6, class_weight="balanced", random_state=SEMILLA,
         ),
     }
 
@@ -122,11 +153,7 @@ def armar_pipeline(modelo):
 
 
 def comparar(modelos, x_ent, y_ent):
-    """F1 promedio de validacion cruzada por modelo, usando solo entrenamiento.
-
-    El preprocesador se ajusta dentro de cada pliegue, asi que la mediana,
-    la moda y la escala nunca ven el pliegue con que se evalua.
-    """
+    """F1 promedio de validacion cruzada por modelo, usando solo entrenamiento."""
     pliegues = StratifiedKFold(n_splits=PLIEGUES_CV, shuffle=True, random_state=SEMILLA)
     f1 = make_scorer(f1_score, zero_division=0)
     return {
@@ -135,6 +162,35 @@ def comparar(modelos, x_ent, y_ent):
         ).mean()
         for nombre, modelo in modelos.items()
     }
+
+
+def calcular_pesos(pipeline: Pipeline, columnas: list[str]) -> dict[str, float]:
+    """Calcula el peso relativo normalizado (suma = 1.0) de cada variable de entrada."""
+    preprocesador = pipeline.named_steps["preprocesar"]
+    modelo = pipeline.named_steps["modelo"]
+    nombres_codificados = list(preprocesador.get_feature_names_out())
+
+    if hasattr(modelo, "feature_importances_"):
+        valores = pd.Series(np.abs(modelo.feature_importances_), index=nombres_codificados)
+        agregador = "sum"
+    elif hasattr(modelo, "coef_"):
+        valores = pd.Series(np.abs(modelo.coef_[0]), index=nombres_codificados)
+        agregador = "mean"
+    else:
+        return {col: round(1.0 / len(columnas), 4) for col in columnas}
+
+    brutos = {}
+    for col in columnas:
+        coincidencias = [
+            f for f in nombres_codificados
+            if f == f"num__{col}" or f.startswith(f"cat__{col}_")
+        ]
+        serie_col = valores[coincidencias]
+        brutos[col] = float(serie_col.sum() if agregador == "sum" else serie_col.mean())
+
+    total = sum(brutos.values()) or 1.0
+    ordenados = sorted(brutos.items(), key=lambda par: par[1], reverse=True)
+    return {col: round(val / total, 4) for col, val in ordenados}
 
 
 def asignar_nivel(probabilidad):
@@ -167,15 +223,16 @@ def evaluar(pipeline, x_pru, y_pru):
     return metricas, confusion_matrix(y_pru, prediccion), tabla
 
 
-def exportar(pipeline, nombre, metricas, columnas):
-    """Guarda pipeline, columnas, cortes y metricas en un solo artefacto."""
+def exportar(pipeline, nombre, metricas, columnas, pesos):
+    """Guarda pipeline, columnas, pesos, cortes y metricas en un solo artefacto."""
     RUTA_MODELO.parent.mkdir(parents=True, exist_ok=True)
     artefacto = {
         "model_id": "M03",
-        "description": "Nivel de riesgo de morosidad (rechazo como sustituto)",
+        "description": "Nivel de riesgo de morosidad (sin variable dominante Credit_History)",
         "model_name": nombre,
         "pipeline": pipeline,
         "feature_names": list(columnas),
+        "weights": pesos,
         "cortes": {"medio": CORTE_MEDIO, "alto": CORTE_ALTO},
         "niveles": list(NIVELES),
         "metrics": {k: float(v) for k, v in metricas.items()},
@@ -184,12 +241,9 @@ def exportar(pipeline, nombre, metricas, columnas):
 
 
 def verificar(pipeline, x_pru):
-    """Comprobaciones con resultado esperado conocido; se detiene si alguna falla.
-
-    El artefacto recargado debe dar las mismas probabilidades que el pipeline
-    en memoria, y cada corte debe caer en el nivel documentado en el README.
-    """
-    recargado = joblib.load(RUTA_MODELO)["pipeline"]
+    """Comprobaciones con resultado esperado conocido; se detiene si alguna falla."""
+    artefacto = joblib.load(RUTA_MODELO)
+    recargado = artefacto["pipeline"]
     misma_salida = np.allclose(
         recargado.predict_proba(x_pru), pipeline.predict_proba(x_pru),
     )
@@ -202,22 +256,22 @@ def verificar(pipeline, x_pru):
         1.0: "alto",
     }
     fallos = {p: e for p, e in casos.items() if asignar_nivel(p) != e}
-    if not misma_salida or fallos:
+    if not misma_salida or fallos or "weights" not in artefacto:
         raise AssertionError(f"Recarga igual: {misma_salida}  Cortes fallidos: {fallos}")
-    print(f"Verificacion: recarga igual y {len(casos)} cortes en su nivel")
+    print(f"Verificacion: recarga igual, pesos exportados y {len(casos)} cortes en su nivel")
 
 
 def main():
     """Ejecuta el entrenamiento completo."""
-    entradas, rechazo = cargar_datos()
+    entradas, rechazo, analisis = cargar_datos()
     verificar_columnas(entradas)
-    print(f"Registros: {len(entradas)}  Entradas: {entradas.shape[1]}")
+    print(f"Registros: {len(entradas)}  Entradas seleccionadas: {entradas.shape[1]}")
     print(f"Rechazos: {rechazo.sum()}  Aprobados: {(rechazo == 0).sum()}")
-    print("Faltantes por columna:")
-    print(entradas.isna().sum()[lambda s: s > 0].to_string())
+    print("\nAnalisis de dominancia de variables (Informacion Mutua):")
+    print(analisis.to_string())
 
     x_ent, x_pru, y_ent, y_pru = dividir(entradas, rechazo)
-    print(f"Entrenamiento: {len(x_ent)}  Prueba: {len(x_pru)}")
+    print(f"\nEntrenamiento: {len(x_ent)}  Prueba: {len(x_pru)}")
     print(f"Tasa de rechazo  entrenamiento: {y_ent.mean():.3f}  prueba: {y_pru.mean():.3f}")
 
     modelos = candidatos()
@@ -228,15 +282,20 @@ def main():
 
     elegido = max(f1_cv, key=f1_cv.get)
     pipeline = armar_pipeline(modelos[elegido]).fit(x_ent, y_ent)
+    pesos = calcular_pesos(pipeline, list(entradas.columns))
     metricas, matriz, tabla = evaluar(pipeline, x_pru, y_pru)
+
     print(f"\nModelo elegido: {elegido}")
     print("Metricas en prueba:", {k: round(v, 3) for k, v in metricas.items()})
     print("Matriz de confusion (filas: real 0/1, columnas: predicho 0/1):")
     print(matriz)
-    print("Rechazo real por nivel en prueba:")
+    print("\nPesos relativos de las variables en el modelo:")
+    for col, peso in pesos.items():
+        print(f"  {col:<20} {peso * 100:6.2f} % ({peso:.4f})")
+    print("\nRechazo real por nivel en prueba:")
     print(tabla.round(2).to_string())
 
-    exportar(pipeline, elegido, metricas, entradas.columns)
+    exportar(pipeline, elegido, metricas, entradas.columns, pesos)
     print(f"\nModelo guardado en: {RUTA_MODELO}")
     verificar(pipeline, x_pru)
 
