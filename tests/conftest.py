@@ -71,7 +71,7 @@ def valid_m01_payload():
 
 @pytest.fixture
 def valid_m03_payload():
-    """Carga útil válida para el modelo M03 (Riesgo de morosidad)."""
+    """Carga útil válida para el modelo M03 (Riesgo de morosidad, sin Credit_History)."""
     return {
         "Gender": "Male",
         "Married": "Yes",
@@ -82,6 +82,5 @@ def valid_m03_payload():
         "CoapplicantIncome": 0.0,
         "LoanAmount": 110.0,
         "Loan_Amount_Term": 360.0,
-        "Credit_History": 1,
         "Property_Area": "Urban",
     }

@@ -38,6 +38,11 @@ def test_cp18_predict_m01_exitoso_caso_aprobacion(client: TestClient, valid_m01_
         assert k in metrica
         assert 0.0 <= metrica[k] <= 1.0
 
+    assert "pesos" in data
+    assert isinstance(data["pesos"], dict)
+    assert len(data["pesos"]) == 17
+    assert abs(sum(data["pesos"].values()) - 1.0) < 0.01
+
 
 def test_cp19_predict_m01_caso_bajo_rendimiento(client: TestClient, valid_m01_payload: dict):
     """
