@@ -54,10 +54,8 @@ Supabase/PostgreSQL.
   pruebas manuales de usabilidad).
 
 ### Limitaciones conocidas
-- El desarrollo se encuentra en fase inicial: solo el esqueleto del
-  repositorio y el ambiente están configurados. La API, el UI y los tres
-  modelos aún no están implementados, por lo que este diseño es preliminar y
-  se refinará en las siguientes etapas.
+- Los artefactos entrenados (`.joblib`) en `training/models/` no se versionan en Git para evitar almacenar binarios pesados en el repositorio; se generan de forma reproducible ejecutando los scripts/cuadernos de entrenamiento o automáticamente durante la construcción de la imagen Docker multi-etapa.
+- Por seguridad, las tablas en Supabase (`logs_m01`, `logs_m02` y `logs_m03`) cuentan con políticas de *Row Level Security (RLS)* que permiten únicamente inserciones (`INSERT`) con la clave pública `anon`, evitando que terceros puedan consultar el historial completo de pacientes o clientes desde el navegador.
 
 ## 2. Riesgos
 
@@ -136,33 +134,33 @@ explícito**, sin el cual no se puede concluir si la prueba pasó o falló.
 
 ### Humanos
 
-| Nombre | % de participación | Asignación |
+| Nombre | % de participación | Asignación principal |
 |---|---|---|
-| Angel Mena Coudin | 100% | Pendiente |
-| Gabriel Serrano Rojas | 100% | Pendiente |
-| Juan José Víquez Ríos | 100% | Pendiente |
-| Josué Torres Sibaja | 100% | Pendiente |
-| Rolando Villavicencio González | 100% | Pendiente |
+| Angel Mena Coudin | 100% | Entrenamiento M01, planificación y diseño de pruebas |
+| Gabriel Serrano Rojas | 100% | Arquitectura MVC (FastAPI/UI), contratos API, M03 y CI/CD en Coolify |
+| Juan José Víquez Ríos | 100% | Refinamiento de características M01, pruebas manuales y documentación |
+| Josué Torres Sibaja | 100% | Entrenamiento M02, batería automatizada (`pytest`), trazabilidad e informe final |
+| Rolando Villavicencio González | 100% | Configuración de Supabase, middleware de persistencia y análisis de datos |
 
-> Los integrantes participarán de forma transversal en todas las
+> Los integrantes participaron de forma transversal en todas las
 > actividades del proyecto (análisis, desarrollo, pruebas,
-> documentación), sin roles fijos por componente.
-- **Hardware**: equipo de cómputo personal de cada integrante.
+> documentación), colaborando en revisiones cruzadas de Pull Requests.
+- **Hardware**: equipo de cómputo personal de cada integrante y servidor de despliegue con Coolify.
 - **Software y versión de Python**: Python 3.13+, gestionado con `uv`.
-- **Librerías**: scipy, scikit-learn, pytest, pylint (ya instaladas); se
-  agregarán las del framework de API, de UI y el cliente de Supabase.
-- **Herramientas**: Git/GitHub, GitHub Issues (registro de defectos),
-  Pylint (análisis estático).
-- **Datos de prueba**: datasets por modelo (M01, M02, M03), proporcionados
-  por el docente.
-- **Ambiente de desarrollo**: entorno virtual gestionado por `uv`
-  (`.venv`), variables de entorno vía `.env`.
-- **Infraestructura adicional**: proyecto de Supabase (PostgreSQL en la
-  nube).
+- **Librerías**: FastAPI, Uvicorn, Jinja2, Pydantic, scipy, scikit-learn, pandas, joblib, supabase, pytest, pytest-cov, pylint.
+- **Herramientas**: Git/GitHub, GitHub Actions (CI/CD), GitHub Issues (registro de defectos), Pylint (análisis estático), Pytest (automatización y cobertura).
+- **Datos de prueba**: datasets por modelo (`M01-M02-M03.xlsx` y `m02_presion_arterial.csv`), proporcionados para el curso.
+- **Ambiente de desarrollo**: entorno virtual gestionado por `uv` (`.venv`), variables de entorno vía `.env` (con plantilla `.env.example` sin secretos) y contenedor Docker multi-etapa.
+- **Infraestructura adicional**: proyecto de Supabase (PostgreSQL en la nube) con tablas `logs_m01`, `logs_m02` y `logs_m03`.
 
 ## 6. Cronograma
 
-*Pendiente, depende de las fechas definidas en el plan de trabajo.*
+| Fase / Hito | Periodo | Actividades principales | Estado |
+|---|---|---|---|
+| **Etapa 1: Planificación y Ambiente** | Setiembre 2026 | Configuración del entorno con `uv`, verificación de herramientas (`pytest`, `pylint`, `supabase`), redacción del Plan y Diseño inicial de pruebas. | Completado |
+| **Etapa 2: Modelos ML y Datos** | Octubre 2026 | Limpieza de datos, entrenamiento, validación cruzada y exportación de los modelos M01 (Binario), M02 (Regresión) y M03 (Multiclase); homologación de cuadernos y diseño de casos de prueba. | Completado |
+| **Etapa 3: Integración, Automatización y Cierre** | Noviembre 2026 | Desarrollo de API FastAPI y vistas Jinja2 (MVC), persistencia en Supabase, batería automatizada con `pytest` (32 pruebas, 90% cobertura), gestión de defectos (`DEF-001` a `DEF-005`), matriz de trazabilidad, informe final y decisión Go/No-Go. | Completado |
+| **Exposición Final** | 23 de noviembre de 2026 | Demostración del sistema bajo prueba, estrategia ejecutada, hallazgos y defensa de la decisión de liberación. | Programado |
 
 ## 7. Métricas
 
