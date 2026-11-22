@@ -1,7 +1,10 @@
 # Pruebas de Software
 
 ## Descripción
-La siguiente aplicación es un sistema de ...
+La siguiente aplicación es un sistema web bajo prueba (SUT) organizado bajo el patrón Modelo-Vista-Controlador (MVC) con FastAPI, Jinja2, modelos de Machine Learning (`scikit-learn`) y persistencia en PostgreSQL mediante Supabase. Integra tres modelos predictivos:
+- **M01 — Aprobación de curso** (Educación, clasificación binaria).
+- **M02 — Presión arterial estimada** (Salud, regresión lineal regularizada Ridge).
+- **M03 — Riesgo de morosidad** (Finanzas, clasificación multiclase con Random Forest).
 
 ## Integrantes del equipo
 - Angel Mena Coudin | C34789
@@ -65,9 +68,9 @@ Todos los comandos se ejecutan con `uv run`, que automáticamente usa el ambient
   ```
   - Interfaz: `/` (inicio con los tres modelos) y los formularios `/m01`, `/m02` y `/m03`.
   - API: `POST /predict/m01` (aprobación del curso), `POST /predict/m02` (presión arterial sistólica estimada) y `POST /predict/m03` (nivel de riesgo de morosidad). Entradas inválidas devuelven `400` con el detalle de cada campo. Los contratos completos están en [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md), [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md), y la documentación interactiva en `/docs`.
-- **Correr las pruebas (pytest):**
+- **Correr la batería de pruebas automatizadas y cobertura (pytest):**
   ```bash
-  uv run pytest
+  uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing
   ```
 - **Correr el linter (pylint):**
   ```bash
@@ -97,8 +100,13 @@ Si Supabase no está disponible, la predicción se devuelve igual y el registro 
   - `src/proyecto_pruebas/views/`: vistas (plantillas Jinja2 y archivos estáticos).
   - `src/proyecto_pruebas/controllers/`: controladores (rutas de la API y de las páginas).
   - `src/proyecto_pruebas/app.py`: aplicación FastAPI que conecta los controladores.
-- `tests/`: pruebas automatizadas (pytest).
-- `docs/`: documentación adicional del proyecto.
+- `tests/`: batería de 32 pruebas automatizadas (`pytest`) que cubren contratos de API, límites, integración con modelos, persistencia en Supabase, seguridad y vistas HTML.
+- `docs/`: documentación técnica y artefactos de prueba del proyecto:
+  - [`docs/plan_de_pruebas.md`](docs/plan_de_pruebas.md): Plan de Pruebas actualizado.
+  - [`docs/diseño_inicial_de_pruebas.md`](docs/diseño_inicial_de_pruebas.md): Diseño de casos de prueba (`CP-01` a `CP-28`) y técnicas aplicadas.
+  - [`docs/contrato_api_m01.md`](docs/contrato_api_m01.md), [`docs/contrato_api_m02.md`](docs/contrato_api_m02.md) y [`docs/contrato_api_m03.md`](docs/contrato_api_m03.md): Especificación de contratos de la API.
+  - [`docs/Informe_Etapa_1.md`](docs/Informe_Etapa_1.md): Informe de la primera etapa.
+  - [`docs/Informe_Etapa_3.md`](docs/Informe_Etapa_3.md): Informe final con matriz de trazabilidad, ciclo de defectos (`DEF-001` a `DEF-005`), métricas consolidadas y decisión Go/No-Go.
 - `evidencias/`: evidencia del plan de pruebas, diseño de pruebas, instalación y verificación del ambiente.
 
 **Nota sobre requirements.txt:** el proyecto usa `uv` como gestor de dependencias, por lo que no se incluye un `requirements.txt`. Las dependencias se declaran en `pyproject.toml` y quedan fijadas en `uv.lock`, que cumple el mismo propósito.
