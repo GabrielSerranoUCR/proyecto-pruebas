@@ -1,6 +1,6 @@
 """
 Modelo (MVC) de M03: Riesgo de morosidad (Clasificación multiclase).
-Contrato de entrada/salida y lógica de predicción.
+Contrato de entrada/salida y lógica de predicción (sin la variable dominante Credit_History).
 """
 
 import os
@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Literal
 
 import joblib
 import pandas as pd
@@ -22,20 +22,17 @@ NOMBRES_METRICAS = {
     "accuracy": "Accuracy", "precision": "Precision", "recall": "Recall", "f1": "F1",
 }
 
-# Con strict=True, int no acepta bool (True/False) ni cadenas
-Binary = Annotated[int, Field(ge=0, le=1)]
 SiNo = Literal["Yes", "No"]
 
 
 class M03Input(BaseModel):
-    """Contrato de entrada del modelo M03 (mismas columnas y valores del conjunto de datos)."""
+    """Contrato de entrada del modelo M03 (10 variables tras excluir Credit_History)."""
 
     # strict=True evita que cadenas como "5000" se conviertan silenciosamente a número
     model_config = ConfigDict(strict=True, extra="forbid", json_schema_extra={"examples": [{
         "Gender": "Male", "Married": "Yes", "Dependents": 0, "Education": "Graduate",
         "Self_Employed": "No", "ApplicantIncome": 5720, "CoapplicantIncome": 0,
-        "LoanAmount": 110, "Loan_Amount_Term": 360, "Credit_History": 1,
-        "Property_Area": "Urban",
+        "LoanAmount": 110, "Loan_Amount_Term": 360, "Property_Area": "Urban",
     }]})
 
     Gender: Literal["Male", "Female"] = Field(
@@ -57,9 +54,6 @@ class M03Input(BaseModel):
         gt=0, le=1000, description="Monto del préstamo, en miles de dólares (USD)."
     )
     Loan_Amount_Term: float = Field(gt=0, le=480, description="Plazo del préstamo, en meses.")
-    Credit_History: Binary = Field(
-        description="Historial crediticio que cumple las pautas: 1 = sí, 0 = no."
-    )
     Property_Area: Literal["Urban", "Semiurban", "Rural"] = Field(
         description='Zona de la propiedad: "Urban", "Semiurban" o "Rural".'
     )
@@ -75,7 +69,7 @@ class M03Metrica(BaseModel):
 
 
 class M03Output(BaseModel):
-    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica e id_ejecucion."""
+    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica, pesos e id."""
 
     id_ejecucion: str = Field(description="Identificador único (UUID v4) de la ejecución.")
     fecha: str = Field(description="Fecha de la ejecución (AAAA-MM-DD).")
@@ -88,6 +82,9 @@ class M03Output(BaseModel):
     )
     descripcion_probabilidad: str = Field(description="Qué representa el campo probabilidad.")
     metrica: M03Metrica = Field(description="Métricas del modelo sobre el conjunto de prueba.")
+    pesos: dict[str, float] = Field(
+        description="Peso relativo normalizado (0 a 1) de cada variable en el modelo."
+    )
 
 
 @lru_cache(maxsize=1)
@@ -97,6 +94,12 @@ def load_m03_artifact() -> dict:
     if not model_path.exists():
         raise FileNotFoundError(f"No se encontró el artefacto del modelo en: {model_path}")
     return joblib.load(model_path)
+
+
+def obtener_pesos() -> dict[str, float]:
+    """Devuelve el diccionario ordenado de pesos relativos de las variables del modelo M03."""
+    artifact = load_m03_artifact()
+    return dict(artifact.get("weights", {}))
 
 
 def nivel_riesgo(probabilidad: float, cortes: dict) -> str:
@@ -112,8 +115,6 @@ def predict(payload: M03Input) -> M03Output:
     """Clasifica el nivel de riesgo de morosidad de una solicitud de préstamo."""
     artifact = load_m03_artifact()
     features = pd.DataFrame([payload.model_dump()])[artifact["feature_names"]]
-    # En el entrenamiento Credit_History es decimal (0.0 / 1.0)
-    features["Credit_History"] = features["Credit_History"].astype(float)
     probability = float(artifact["pipeline"].predict_proba(features)[0][1])
     nivel = nivel_riesgo(probability, artifact["cortes"])
 
@@ -128,4 +129,5 @@ def predict(payload: M03Input) -> M03Output:
         probabilidad=round(probability, 4),
         descripcion_probabilidad="Probabilidad de rechazo",
         metrica=M03Metrica(**{NOMBRES_METRICAS[k]: v for k, v in artifact["metrics"].items()}),
+        pesos=obtener_pesos(),
     )

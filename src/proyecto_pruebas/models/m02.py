@@ -21,6 +21,23 @@ DEFAULT_MODEL_PATH = MODELS_DIR / "blood_pressure_ridge_model.joblib"
 # El modelo exportado no las incluye, por lo que deben actualizarse si se reentrena con otros datos.
 METRICAS_PRUEBA = {"MAE": 10.8114, "RMSE": 14.3936, "R2": 0.5321}
 
+# Pesos relativos estandarizados por defecto (respaldo si el artefacto no trae feature_weights_)
+PESOS_POR_DEFECTO = {
+    "prevalentHyp": 0.4821,
+    "age": 0.1492,
+    "BMI": 0.0935,
+    "heartRate": 0.0695,
+    "BPMeds": 0.0612,
+    "glucose": 0.0351,
+    "male": 0.0314,
+    "education": 0.0284,
+    "totChol": 0.0279,
+    "cigsPerDay": 0.0118,
+    "prevalentStroke": 0.0052,
+    "currentSmoker": 0.0031,
+    "diabetes": 0.0017,
+}
+
 # Con strict=True, int no acepta bool (True/False) ni cadenas
 Binary = Annotated[int, Field(ge=0, le=1)]
 
@@ -53,6 +70,7 @@ class M02Input(BaseModel):
     heartRate: float = Field(gt=0, le=300, description="Frecuencia cardíaca en latidos por minuto.")
     glucose: float = Field(gt=0, le=1000, description="Glucosa en mg/dL.")
 
+
 class M02Metrica(BaseModel):
     """Métricas del modelo obtenidas sobre el conjunto de prueba."""
 
@@ -62,7 +80,7 @@ class M02Metrica(BaseModel):
 
 
 class M02Output(BaseModel):
-    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica e id_ejecucion."""
+    """Contrato de respuesta común: fecha, hora, modelo, predicción, métrica, pesos e id."""
 
     id_ejecucion: str = Field(description="Identificador único (UUID v4) de la ejecución.")
     fecha: str = Field(description="Fecha de la ejecución (AAAA-MM-DD).")
@@ -71,6 +89,9 @@ class M02Output(BaseModel):
     prediccion: float = Field(description="Presión arterial sistólica estimada, con 2 decimales.")
     unidad: str = Field(description='Unidad de la predicción ("mmHg").')
     metrica: M02Metrica = Field(description="Métricas del modelo sobre el conjunto de prueba.")
+    pesos: dict[str, float] = Field(
+        description="Peso relativo normalizado (0 a 1) de cada variable en el modelo."
+    )
 
 
 @lru_cache(maxsize=1)
@@ -80,6 +101,12 @@ def load_m02_artifact():
     if not model_path.exists():
         raise FileNotFoundError(f"No se encontró el artefacto del modelo en: {model_path}")
     return joblib.load(model_path)
+
+
+def obtener_pesos() -> dict[str, float]:
+    """Devuelve el diccionario ordenado de pesos relativos de las variables del modelo M02."""
+    pipeline = load_m02_artifact()
+    return getattr(pipeline, "feature_weights_", PESOS_POR_DEFECTO).copy()
 
 
 def predict(payload: M02Input) -> M02Output:
@@ -100,4 +127,5 @@ def predict(payload: M02Input) -> M02Output:
         prediccion=round(prediction, 2),
         unidad="mmHg",
         metrica=M02Metrica(**METRICAS_PRUEBA),
+        pesos=obtener_pesos(),
     )
