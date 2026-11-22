@@ -87,6 +87,7 @@ curl -X POST http://127.0.0.1:8000/predict/m01 \
 | `probabilidad` | número | Probabilidad estimada de aprobar, de 0 a 1, redondeada a 4 decimales (campo adicional) |
 | `descripcion_probabilidad` | cadena | Qué representa `probabilidad`: `"Probabilidad de aprobar"` (campo adicional) |
 | `metrica` | objeto | Métricas del modelo sobre el conjunto de prueba (`Accuracy`, `Precision`, `Recall`, `F1`) |
+| `pesos` | objeto | Peso relativo normalizado (0 a 1, suma = 1.0) de cada una de las 17 variables de entrada en el modelo |
 
 **Justificación de los cambios respecto al JSON de referencia:**
 

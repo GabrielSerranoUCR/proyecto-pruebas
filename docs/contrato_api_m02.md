@@ -78,6 +78,7 @@ curl -X POST http://127.0.0.1:8000/predict/m02 \
 | `prediccion` | número | Presión arterial sistólica estimada, redondeada a 2 decimales |
 | `unidad` | cadena | Unidad de la predicción: `"mmHg"` (campo adicional) |
 | `metrica` | objeto | Métricas del modelo sobre el conjunto de prueba (`MAE`, `RMSE`, `R2`) |
+| `pesos` | objeto | Peso relativo estandarizado (0 a 1, suma = 1.0) de cada una de las 13 variables de entrada en el modelo |
 
 **Justificación de los cambios respecto al JSON de referencia:**
 
