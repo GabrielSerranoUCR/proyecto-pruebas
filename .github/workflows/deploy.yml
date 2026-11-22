@@ -28,8 +28,25 @@ jobs:
       - run: uv sync --frozen
       - run: uv run pylint src
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.9"
+      - run: uv sync --group jupyter
+      - name: Train and generate ML model artifacts
+        run: |
+          uv run python training/train_m02.py
+          uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
+          cd training/notebooks
+          uv run jupyter nbconvert --to notebook --execute --output-dir /tmp Aprobacion_de_curso_training_model.ipynb
+      - name: Run automated test battery
+        run: uv run pytest -v --cov=src/proyecto_pruebas
+
   build:
-    needs: lint
+    needs: [lint, test]
     runs-on: ubuntu-latest
     permissions:
       contents: read
