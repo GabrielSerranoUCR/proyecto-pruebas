@@ -328,3 +328,29 @@ form:not([data-endpoint]) button[type=submit]:disabled { opacity: 0.4; cursor: n
 .dropdown-lista [aria-selected="true"]::after {
   content: ""; width: 8px; height: 8px; background: var(--acento); flex: none;
 }
+
+/* ---------- Panel de pesos de las variables del modelo ---------- */
+.pesos-panel {
+  margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--linea);
+}
+.pesos-panel > summary {
+  cursor: pointer; font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted); user-select: none;
+}
+.pesos-lista {
+  list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 7px;
+  max-height: 210px; overflow-y: auto; padding-right: 4px;
+}
+.peso-item { display: grid; gap: 3px; }
+.peso-cabecera {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+  font-size: 0.75rem;
+}
+.peso-etiqueta { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.peso-valor { color: var(--acento); font-weight: 700; flex: none; font-variant-numeric: tabular-nums; }
+.peso-pista {
+  height: 4px; background: rgb(255 255 255 / 0.12); overflow: hidden;
+}
+.peso-barra {
+  height: 100%; background: var(--acento);
+}
