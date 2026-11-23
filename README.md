@@ -120,7 +120,7 @@ docker run --rm -p 8000:8000 --env-file .env proyecto-pruebas
 
 ### Batería de pruebas automatizadas (`pytest`)
 
-La suite consta de **32 pruebas automatizadas** que verifican las cuatro capas del sistema (Vistas HTML, Controladores de API, Modelos ML y Persistencia en Supabase), alcanzando un **90% de cobertura de código**:
+La suite automatizada verifica las capas del sistema (Vistas HTML, Controladores de API, Modelos ML y Persistencia en Supabase):
 
 ```bash
 # Ejecutar todas las pruebas con salida detallada y tabla de cobertura
@@ -135,6 +135,15 @@ uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing
 | `tests/test_integration.py` | Integración directa API $\to$ Modelo ML, despacho de registros de ejecución hacia Supabase (`CP-25`), resiliencia *fail-soft* ante caída de base de datos (`CP-27`) y fallback a terminal. |
 | `tests/test_security_routes.py` | Rutas o modelos inexistentes HTTP 404 (`CP-14`), métodos no permitidos HTTP 405 (`CP-15`) y no divulgación de *stack traces* ni rutas internas ante errores HTTP 500 (`CP-17`). |
 | `tests/test_ui_views.py` | Renderizado de la página principal (`/`) y despliegue de los formularios específicos en `/m01` (`CP-01`), `/m02` (`CP-02`) y `/m03`. |
+| `tests/test_model_predictive_quality.py` | Una prueba por modelo; evalúa cada fila de los CSV y reporta errores de clasificación y métricas globales. |
+
+Para ver las métricas y los registros de clasificación incorrectos en la terminal:
+
+```bash
+uv run pytest -s -rx tests/test_model_predictive_quality.py
+```
+
+M02 es un modelo de regresión; por ello se reportan MAE, RMSE y R² en lugar de métricas de clasificación. M03 requiere el artefacto `training/models/m03_riesgo_morosidad.joblib`; si no está disponible, su evaluación se marca como omitida. Los registros de M03 con variables faltantes se omiten porque el contrato actual de la API no acepta valores nulos.
 
 ### Análisis estático de código (`pylint`)
 
@@ -185,7 +194,7 @@ proyecto-pruebas/
 │   └── middleware_logs.py      # Middleware de auditoría de tiempos y resultados por solicitud
 ├── supabase/
 │   └── logs_modelos.sql        # Esquema DDL de tablas de logs e índices con políticas RLS
-├── tests/                      # Batería de 32 pruebas automatizadas con pytest
+├── tests/                      # Pruebas automatizadas de API, integración y calidad predictiva
 ├── training/                   # Datasets crudos, cuadernos Jupyter y scripts de entrenamiento ML
 ├── .env.example                # Plantilla de variables de entorno sin secretos
 ├── Dockerfile                  # Construcción multi-etapa (entrenamiento + servidor Uvicorn)
