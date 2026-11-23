@@ -18,6 +18,8 @@ from sklearn.model_selection import KFold, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
+from data_utils import exportar_datos_prueba
+
 
 def load_data() -> pd.DataFrame:
     """Carga el conjunto de datos desde el archivo Excel M01-M02-M03.xlsx o CSV de respaldo."""
@@ -174,6 +176,8 @@ def main():
 
     print("\n[3/5] Preparando y dividiendo datos (80% train / 20% test, sin diaBP)...")
     (X_train, X_test, y_train, y_test), _ = preprocess_and_split(df)
+    ruta_datos_prueba = exportar_datos_prueba(X_test, y_test, "m02")
+    print(f"      Datos de prueba exportados en: {ruta_datos_prueba}")
 
     numerical_cols = ["age", "education", "cigsPerDay", "totChol", "BMI", "heartRate", "glucose"]
     binary_cols = ["male", "currentSmoker", "BPMeds", "prevalentStroke", "prevalentHyp", "diabetes"]

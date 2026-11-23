@@ -19,6 +19,7 @@ Se recomienda utilizar el kernel del entorno virtual `.venv` generado por `uv` a
 - **Métricas evaluadas:** Accuracy, Precision, Recall, F1.
 - **Notebook interactivo:** `training/notebooks/Aprobacion_de_curso_training_model.ipynb`
 - **Modelo exportado:** `training/models/approval_sgd_model.joblib`
+- **Datos de prueba exportados:** `training/data/clean/m01/1_curso/test_data.csv`
 
 ---
 
@@ -33,3 +34,6 @@ Se recomienda utilizar el kernel del entorno virtual `.venv` generado por `uv` a
   uv run python training/train_m02.py
   ```
 - **Modelo exportado:** `training/models/blood_pressure_ridge_model.joblib` (incluye escalador + modelo para inferencia).
+- **Datos de prueba exportados:** `training/data/clean/m02/1_curso/test_data.csv`
+
+Los notebooks de entrenamiento de M01, M02 y M03, y los scripts CLI de M02 y M03, exportan las variables predictoras y la variable objetivo de prueba en un único CSV por modelo. Los archivos quedan en `training/data/clean/{m01|m02|m03}/1_curso/test_data.csv`. La escritura se centraliza en `training/data_utils.py`.
