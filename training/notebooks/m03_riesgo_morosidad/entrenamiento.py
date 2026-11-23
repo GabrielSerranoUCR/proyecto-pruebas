@@ -1,6 +1,7 @@
 """Entrenamiento del modelo M03 (riesgo de morosidad). Decisiones en README.md."""
 
 from pathlib import Path
+import sys
 
 import joblib
 import numpy as np
@@ -21,6 +22,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
 RAIZ = Path(__file__).resolve().parents[2]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+
+from data_utils import exportar_datos_prueba
+
 RUTA_DATOS = RAIZ / "data" / "raw" / "M01-M02-M03.xlsx"
 HOJA_ENTRENAMIENTO = "Mor Riesgo Ent"
 RUTA_MODELO = RAIZ / "models" / "m03_riesgo_morosidad.joblib"
@@ -271,6 +277,8 @@ def main():
     print(analisis.to_string())
 
     x_ent, x_pru, y_ent, y_pru = dividir(entradas, rechazo)
+    ruta_datos_prueba = exportar_datos_prueba(x_pru, y_pru, "m03")
+    print(f"Datos de prueba exportados en: {ruta_datos_prueba}")
     print(f"\nEntrenamiento: {len(x_ent)}  Prueba: {len(x_pru)}")
     print(f"Tasa de rechazo  entrenamiento: {y_ent.mean():.3f}  prueba: {y_pru.mean():.3f}")
 
