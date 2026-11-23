@@ -1,4 +1,12 @@
-"""Evaluacion predictiva de cada modelo con sus datos de prueba CSV."""
+"""Evaluacion predictiva de cada modelo con sus datos de prueba CSV.
+
+Oraculo (CP-29): un modelo estadistico no acierta todos los registros, por lo
+que exigir ``prediccion == etiqueta`` fila por fila produce fallos esperados
+(DEF-006). Cada registro se valida contra el contrato de salida (HTTP 200,
+dominio de la clase y probabilidad en [0, 1]) y la calidad predictiva se
+verifica de forma agregada contra los umbrales de aceptacion definidos en
+``UMBRALES``. Los registros mal clasificados se reportan, pero no fallan.
+"""
 
 # Pytest fixtures are injected as function arguments.
 # pylint: disable=redefined-outer-name
@@ -31,6 +39,16 @@ M01_CSV = DATA_DIR / "m01" / "1_curso" / "test_data.csv"
 M02_CSV = DATA_DIR / "m02" / "1_curso" / "test_data.csv"
 M03_CSV = DATA_DIR / "m03" / "1_curso" / "test_data.csv"
 
+# Umbrales minimos de aceptacion sobre el conjunto de prueba (criterio de salida
+# del plan de pruebas). Se fijan con margen bajo la linea base medida en la
+# Etapa 3 para detectar degradaciones sin volver fragil la bateria.
+UMBRALES = {
+    "M01": {"Accuracy": 0.60, "Recall": 0.60, "F1-score": 0.40},
+    "M02": {"MAE_max": 12.0, "RMSE_max": 16.0, "R2": 0.50},
+    "M03": {"Accuracy": 0.58, "Recall": 0.45, "F1-score": 0.40},
+}
+CLASES_M03 = {"bajo", "medio", "alto"}
+
 
 @dataclass(frozen=True)
 class Prediction:
@@ -49,7 +67,7 @@ def _report_classification(
     actual: list[int],
     predicted: list[int],
     incorrect_records: list[str],
-) -> None:
+) -> dict[str, float]:
     metrics = {
         "Accuracy": accuracy_score(actual, predicted),
         "Precision": precision_score(actual, predicted, zero_division=0),
@@ -60,6 +78,14 @@ def _report_classification(
     print(f"\n{model_name} ({len(actual)} registros): {metrics}")
     print(f"Matriz de confusion [0, 1]=\n{matrix}")
     print(f"Registros incorrectos: {incorrect_records}")
+    return metrics
+
+
+def _assert_umbrales(model_name: str, metrics: dict[str, float]) -> None:
+    for name, minimum in UMBRALES[model_name].items():
+        assert metrics[name] >= minimum, (
+            f"{model_name}: {name}={metrics[name]:.4f} por debajo del umbral {minimum}"
+        )
 
 @pytest.fixture(scope="module")
 def client():
@@ -190,7 +216,7 @@ def test_m01_prediccion_individual(
     m01_predictions: list[Prediction],
     record_index: int,
 ) -> None:
-    """Compara la predicción de aprobación con la etiqueta de cada registro."""
+    """Valida que cada registro M01 reciba una respuesta binaria bien formada."""
     result = m01_predictions[record_index]
     record_id = f"M01 registro {record_index + 1}"
 
@@ -201,8 +227,8 @@ def test_m01_prediccion_individual(
     assert "prediccion" in result.response, f"{record_id}: falta la predicción"
     assert result.response["modelo"] == "M01", f"{record_id}: modelo inesperado"
     assert result.response["prediccion"] in (0, 1), f"{record_id}: clase inválida"
-    assert result.response["prediccion"] == result.actual, (
-        f"{record_id}: real={result.actual}, predicho={result.response['prediccion']}"
+    assert 0.0 <= result.response["probabilidad"] <= 1.0, (
+        f"{record_id}: probabilidad fuera de [0, 1]"
     )
 
 def test_m01_metricas_globales(m01_predictions: list[Prediction]) -> None:
@@ -220,7 +246,8 @@ def test_m01_metricas_globales(m01_predictions: list[Prediction]) -> None:
         for index, (expected, prediction) in enumerate(zip(actual, predicted))
         if expected != prediction
     ]
-    _report_classification("M01", actual, predicted, incorrect_records)
+    metrics = _report_classification("M01", actual, predicted, incorrect_records)
+    _assert_umbrales("M01", metrics)
 
 @pytest.mark.parametrize(
     "record_index",
@@ -263,6 +290,10 @@ def test_m02_metricas_globales(m02_predictions: list[Prediction]) -> None:
     }
     print(f"\nM02 ({len(actual)} registros): {metrics}")
     print(f"Error absoluto maximo: {errors.max():.2f} mmHg")
+    umbral = UMBRALES["M02"]
+    assert metrics["MAE"] <= umbral["MAE_max"], f"M02: MAE={metrics['MAE']:.2f}"
+    assert metrics["RMSE"] <= umbral["RMSE_max"], f"M02: RMSE={metrics['RMSE']:.2f}"
+    assert metrics["R2"] >= umbral["R2"], f"M02: R2={metrics['R2']:.4f}"
 
 @pytest.mark.parametrize(
     "record_index",
@@ -273,7 +304,7 @@ def test_m03_prediccion_individual(
     m03_predictions: list[Prediction],
     record_index: int,
 ) -> None:
-    """Compara la clasificación de rechazo para cada registro completo de M03."""
+    """Valida que cada registro completo de M03 reciba una clase y probabilidad válidas."""
     result = m03_predictions[record_index]
     record_id = f"M03 registro {record_index + 1}"
     if result.skip_reason:
@@ -285,10 +316,11 @@ def test_m03_prediccion_individual(
     assert result.response is not None
     assert "probabilidad" in result.response, f"{record_id}: falta probabilidad"
     assert result.response["modelo"] == "M03", f"{record_id}: modelo inesperado"
-    predicted = int(float(result.response["probabilidad"]) >= 0.5)
-    assert predicted == result.actual, (
-        f"{record_id}: rechazo real={result.actual}, "
-        f"probabilidad={result.response['probabilidad']}, rechazo predicho={predicted}"
+    assert 0.0 <= result.response["probabilidad"] <= 1.0, (
+        f"{record_id}: probabilidad fuera de [0, 1]"
+    )
+    assert result.response["prediccion"] in CLASES_M03, (
+        f"{record_id}: clase de riesgo inválida {result.response['prediccion']}"
     )
 
 def test_m03_metricas_globales(m03_predictions: list[Prediction]) -> None:
@@ -316,7 +348,8 @@ def test_m03_metricas_globales(m03_predictions: list[Prediction]) -> None:
         if result.skip_reason is None
         and int(result.response["probabilidad"] >= 0.5) != int(result.actual)
     ]
-    _report_classification("M03", actual, predicted, incorrect_records)
+    metrics = _report_classification("M03", actual, predicted, incorrect_records)
+    _assert_umbrales("M03", metrics)
     skipped_records = [
         f"registro_{index + 1}"
         for index, result in enumerate(m03_predictions)
