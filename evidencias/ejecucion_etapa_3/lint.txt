@@ -1,0 +1,14 @@
+# Lint — 2026-11-23 00:03 CST
+$ uv run pylint src
+--------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
+$ uv run pylint tests --disable=redefined-outer-name,missing-function-docstring,duplicate-code
+--------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
+$ uv run pylint training/... --disable=invalid-name,too-many-locals,too-many-arguments,too-many-positional-arguments,wrong-import-position
+--------------------------------------------------------------------
+Your code has been rated at 10.00/10 (previous run: 10.00/10, +0.00)
+$ hadolint Dockerfile
+hadolint: sin hallazgos (exit 0)
+$ actionlint
+actionlint: sin hallazgos (exit 0)

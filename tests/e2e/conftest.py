@@ -44,8 +44,12 @@ def flujo(page, app_url) -> FlujoPrediccion:
 
 
 @pytest.fixture
-def movil_page(browser):
-    """Página con ventana y user agent de teléfono (interfaz móvil)."""
+def movil_page(browser, pytestconfig, output_path):
+    """Página con ventana y user agent de teléfono (interfaz móvil).
+
+    Como usa su propio contexto, pytest-playwright no le toma la captura final;
+    con ``--screenshot=on`` se guarda aquí, igual que en las pruebas de escritorio.
+    """
     contexto = browser.new_context(
         viewport={"width": 390, "height": 844},
         user_agent=UA_MOVIL,
@@ -55,6 +59,8 @@ def movil_page(browser):
     )
     pagina = contexto.new_page()
     yield pagina
+    if pytestconfig.getoption("--screenshot") == "on":
+        pagina.screenshot(path=f"{output_path}/test-finished-1.png", full_page=True)
     contexto.close()
 
 
