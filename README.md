@@ -121,6 +121,7 @@ docker run --rm -p 8000:8000 --env-file .env proyecto-pruebas
 ### Batería de pruebas automatizadas (`pytest`)
 
 La suite automatizada verifica las capas del sistema (Vistas HTML, Controladores de API, Modelos ML y Persistencia en Supabase):
+La suite funcional consta de **34 pruebas automatizadas** que verifican las cuatro capas del sistema (Vistas HTML, Controladores de API, Modelos ML y Persistencia en Supabase), alcanzando un **90% de cobertura de código**; a ellas se suman **15 pruebas E2E** con Playwright:
 
 ```bash
 # Ejecutar todas las pruebas con salida detallada y tabla de cobertura
@@ -144,6 +145,41 @@ uv run pytest -s -rx tests/test_model_predictive_quality.py
 ```
 
 M02 es un modelo de regresión; por ello se reportan MAE, RMSE y R² en lugar de métricas de clasificación. M03 requiere el artefacto `training/models/m03_riesgo_morosidad.joblib`; si no está disponible, su evaluación se marca como omitida. Los registros de M03 con variables faltantes se omiten porque el contrato actual de la API no acepta valores nulos.
+
+### Pruebas de extremo a extremo (`Playwright`)
+
+Las pruebas E2E abren la aplicación en un navegador real, llenan los formularios como lo haría una persona y verifican la predicción devuelta por la API. La suite sigue una separación en **tres capas**:
+
+| Capa | Ubicación | Responsabilidad |
+|---|---|---|
+| **Core** | `tests/e2e/core/` | Infraestructura: levanta Uvicorn en un puerto libre y ofrece acciones primitivas de UI (localizar campos, elegir en el desplegable, enviar). |
+| **Negocio** | `tests/e2e/pages/`, `tests/e2e/flows/` | *Page objects* (`InicioPage`, `ModeloPage`) y flujos (`FlujoPrediccion`): qué campos tiene cada formulario y cómo se obtiene una predicción. |
+| **Test scripts** | `tests/e2e/test_*.py` | Casos de prueba legibles que solo usan flujos y datos; no contienen selectores. |
+| **Datos** | `tests/e2e/data/payloads.py` | Factorías que devuelven copias nuevas de cargas útiles válidas (no se usa base de datos: Supabase queda desactivado). |
+
+```bash
+# Instalar el navegador una sola vez
+uv run playwright install chromium
+
+# Ejecutar las pruebas E2E
+uv run pytest --e2e tests/e2e -v
+
+# Ejecutar solo una capa o un archivo
+uv run pytest --e2e tests/e2e/test_movil.py -v
+```
+
+Para generar el reporte HTML y las evidencias de una falla (traza, video y captura):
+
+```bash
+uv run pytest --e2e tests/e2e -v \
+  --html=test-results/reporte-e2e.html --self-contained-html \
+  --tracing=retain-on-failure --video=retain-on-failure \
+  --screenshot=only-on-failure --output=test-results/playwright
+```
+
+En GitHub Actions, cada ejecución sube la carpeta `test-results/` como artifact **`reporte-e2e`** (retención de 14 días), incluso si las pruebas fallan. Se descarga desde la página del workflow → *Artifacts*, se descomprime y se abre `reporte-e2e.html`; las trazas se abren con `uv run playwright show-trace <carpeta>/trace.zip`. La carpeta `test-results/` está en `.gitignore`, así que nunca se sube al repositorio.
+
+Sin el flag `--e2e`, las pruebas E2E se marcan como omitidas, de modo que `uv run pytest` sigue ejecutando únicamente la batería funcional. Las pruebas cubren: navegación y paneles, flujos completos de M01/M02/M03, validación en el navegador, interfaz móvil con pestañas y pantalla de resultado, y manejo de errores 400/500 y de red.
 
 ### Análisis estático de código (`pylint`)
 
@@ -195,6 +231,8 @@ proyecto-pruebas/
 ├── supabase/
 │   └── logs_modelos.sql        # Esquema DDL de tablas de logs e índices con políticas RLS
 ├── tests/                      # Pruebas automatizadas de API, integración y calidad predictiva
+├── tests/                      # Batería funcional, de integración y E2E
+│   └── e2e/                    # Playwright: core/ (infra), pages/ + flows/ (negocio), data/ y test_*.py
 ├── training/                   # Datasets crudos, cuadernos Jupyter y scripts de entrenamiento ML
 ├── .env.example                # Plantilla de variables de entorno sin secretos
 ├── Dockerfile                  # Construcción multi-etapa (entrenamiento + servidor Uvicorn)

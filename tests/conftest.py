@@ -10,6 +10,26 @@ from fastapi.testclient import TestClient
 from proyecto_pruebas.app import app
 
 
+def pytest_addoption(parser):
+    """Añade la opción que habilita las pruebas E2E (requieren navegador)."""
+    parser.addoption(
+        "--e2e",
+        action="store_true",
+        default=False,
+        help="Ejecuta las pruebas E2E (requiere 'uv run playwright install chromium').",
+    )
+
+
+def pytest_collection_modifyitems(config, items):
+    """Omite las pruebas E2E salvo que se pidan explícitamente con --e2e."""
+    if config.getoption("--e2e"):
+        return
+    omitir = pytest.mark.skip(reason="Pruebas E2E desactivadas; use --e2e")
+    for item in items:
+        if "e2e" in item.keywords:
+            item.add_marker(omitir)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_environment():
     """Configura variables de entorno para la ejecución de pruebas."""
