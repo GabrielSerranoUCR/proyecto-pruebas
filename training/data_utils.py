@@ -27,7 +27,6 @@ def exportar_datos_prueba(
         / "data"
         / "clean"
         / modelo
-        / "1_curso"
         / "test_data.csv"
     )
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
