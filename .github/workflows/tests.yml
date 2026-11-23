@@ -32,3 +32,24 @@ jobs:
       - name: Run automated test suite with coverage
         run: |
           uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: |
+          uv run pytest --e2e tests/e2e -v \
+            --html=test-results/reporte-e2e.html --self-contained-html \
+            --tracing=retain-on-failure \
+            --video=retain-on-failure \
+            --screenshot=only-on-failure \
+            --output=test-results/playwright
+
+      - name: Upload E2E report and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-e2e
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
