@@ -158,6 +158,17 @@ uv run pytest --e2e tests/e2e -v
 uv run pytest --e2e tests/e2e/test_movil.py -v
 ```
 
+Para generar el reporte HTML y las evidencias de una falla (traza, video y captura):
+
+```bash
+uv run pytest --e2e tests/e2e -v \
+  --html=test-results/reporte-e2e.html --self-contained-html \
+  --tracing=retain-on-failure --video=retain-on-failure \
+  --screenshot=only-on-failure --output=test-results/playwright
+```
+
+En GitHub Actions, cada ejecución sube la carpeta `test-results/` como artifact **`reporte-e2e`** (retención de 14 días), incluso si las pruebas fallan. Se descarga desde la página del workflow → *Artifacts*, se descomprime y se abre `reporte-e2e.html`; las trazas se abren con `uv run playwright show-trace <carpeta>/trace.zip`. La carpeta `test-results/` está en `.gitignore`, así que nunca se sube al repositorio.
+
 Sin el flag `--e2e`, las pruebas E2E se marcan como omitidas, de modo que `uv run pytest` sigue ejecutando únicamente la batería funcional. Las pruebas cubren: navegación y paneles, flujos completos de M01/M02/M03, validación en el navegador, interfaz móvil con pestañas y pantalla de resultado, y manejo de errores 400/500 y de red.
 
 ### Análisis estático de código (`pylint`)
