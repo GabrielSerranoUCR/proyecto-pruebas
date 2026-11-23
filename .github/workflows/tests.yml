@@ -32,3 +32,9 @@ jobs:
       - name: Run automated test suite with coverage
         run: |
           uv run pytest -v --cov=src/proyecto_pruebas --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Install Playwright browser
+        run: uv run playwright install --with-deps chromium
+
+      - name: Run end-to-end tests
+        run: uv run pytest --e2e tests/e2e -v
