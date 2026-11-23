@@ -1,5 +1,6 @@
 """
-Batería de pruebas automatizadas para la API del Modelo M01 (Aprobación del curso - Clasificación binaria).
+Batería de pruebas automatizadas para la API del Modelo M01
+(Aprobación del curso - Clasificación binaria).
 Cubre casos funcionales positivos, negativos y análisis de límites.
 Curso: Pruebas de Software (CI0142)
 """

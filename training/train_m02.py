@@ -133,7 +133,9 @@ def evaluate_models(X_train, X_test, y_train, y_test, numerical_cols, binary_col
         "Ridge": Ridge(alpha=1.0),
         "Decision Tree": RandomForestRegressor(n_estimators=1, max_depth=5, random_state=42),
         "Random Forest": RandomForestRegressor(n_estimators=100, max_depth=8, random_state=42),
-        "Gradient Boosting": GradientBoostingRegressor(n_estimators=100, max_depth=3, random_state=42),
+        "Gradient Boosting": GradientBoostingRegressor(
+            n_estimators=100, max_depth=3, random_state=42
+        ),
     }
 
     results = []
@@ -166,11 +168,15 @@ def evaluate_models(X_train, X_test, y_train, y_test, numerical_cols, binary_col
 
 
 def main():
+    """Entrena M02, exporta el artefacto y los datos de prueba."""
     print("[1/5] Cargando datos de Presión Arterial...")
     df = load_data()
     print(f"      Dimensiones del dataset: {df.shape[0]} filas x {df.shape[1]} columnas")
 
-    print("\n[2/5] Analizando dominancia de variables (Información Mutua y Correlación con sysBP)...")
+    print(
+        "\n[2/5] Analizando dominancia de variables "
+        "(Información Mutua y Correlación con sysBP)..."
+    )
     tabla_dom = analyze_feature_dominance(df)
     print(tabla_dom.to_string())
 

@@ -38,7 +38,8 @@ def test_cp25_integracion_api_a_persistencia_supabase(client: TestClient, valid_
     """
     CP-25: Prueba de integración: Capa API -> Capa Persistencia (Supabase).
     Verifica que cada ejecución exitosa despache un registro a Supabase
-    con los campos mínimos requeridos (modelo, endpoint, método, estado, entrada, salida, id_ejecucion).
+    con los campos mínimos requeridos (modelo, endpoint, método, estado, entrada,
+    salida, id_ejecucion).
     """
     with patch("proyecto_pruebas.middleware_logs.registrar_log") as mock_registrar:
         response = client.post("/predict/m02", json=valid_m02_payload)
@@ -58,7 +59,7 @@ def test_cp25_integracion_api_a_persistencia_supabase(client: TestClient, valid_
         assert log_enviado.salida["prediccion"] == response.json()["prediccion"]
 
 
-def test_cp27_resiliencia_bd_no_disponible(client: TestClient, valid_m02_payload: dict, caplog):
+def test_cp27_resiliencia_bd_no_disponible(client: TestClient, valid_m02_payload: dict):
     """
     CP-27: Comportamiento ante BD no disponible (Fail-soft).
     Si Supabase falla (por ejemplo, desconexión de red o error de API de PostgREST),

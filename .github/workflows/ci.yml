@@ -1,0 +1,238 @@
+# Integración y despliegue continuo en un único flujo:
+#   lint ─────────┐
+#   models ─┬─ test ─┼─ build ── deploy (solo push a main)
+#           └─ e2e ──┘
+# - lint:   pylint (src, tests, training), hadolint (Dockerfile) y actionlint (workflows).
+# - models: entrena M01, M02 y M03 una sola vez y comparte los .joblib con test y e2e.
+# - test:   un paso por tipo de prueba (contrato API, seguridad, UI, integración,
+#           calidad predictiva ML y rendimiento) y reporte de cobertura combinado.
+# - e2e:    flujos completos en Chromium con Playwright; publica reporte y evidencias.
+# - build:  construye la imagen Docker en todo cambio; solo la publica en GHCR en main.
+# - deploy: pide a Coolify que descargue la imagen nueva y reinicie el contenedor.
+name: CI/CD
+
+on:
+  push:
+    branches: [main, dev, "feature/**", "fix/**"]
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+# Una ejecución a la vez por rama; un push nuevo cancela la anterior en curso
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_VERSION: "0.12.9"
+  # GHCR exige el nombre en minúsculas
+  IMAGE: ghcr.io/gabrielserranoucr/proyecto-pruebas
+  # Solo un push a main publica la imagen y despliega
+  ES_MAIN: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen --group jupyter
+
+      - name: Pylint – código de la aplicación (src)
+        run: uv run pylint src
+
+      # Excepciones propias de pytest: los fixtures se reciben como argumentos con el
+      # mismo nombre (redefined-outer-name), las cargas útiles se repiten a propósito
+      # entre módulos (duplicate-code) y los métodos cortos de page objects no
+      # necesitan docstring.
+      - name: Pylint – pruebas (tests)
+        if: success() || failure()
+        run: >
+          uv run pylint tests
+          --disable=redefined-outer-name,missing-function-docstring,duplicate-code
+
+      # Excepciones propias de scripts de ML: nombres X_train/X_test por convención,
+      # pipelines de entrenamiento largos e import de data_utils tras ajustar sys.path.
+      - name: Pylint – scripts de entrenamiento (training)
+        if: success() || failure()
+        run: >
+          uv run pylint training/data_utils.py training/train_m02.py
+          training/notebooks/m03_riesgo_morosidad/entrenamiento.py
+          --disable=invalid-name,too-many-locals,too-many-arguments,too-many-positional-arguments,wrong-import-position
+
+      - name: Hadolint – Dockerfile
+        if: success() || failure()
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: Actionlint – workflows de GitHub Actions
+        if: success() || failure()
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+
+  models:
+    name: Entrenar modelos ML
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen --group jupyter
+      - name: Entrenar y exportar M01, M02 y M03
+        run: |
+          uv run python training/train_m02.py
+          uv run python training/notebooks/m03_riesgo_morosidad/entrenamiento.py
+          cd training/notebooks
+          uv run jupyter nbconvert --to notebook --execute --output-dir "$RUNNER_TEMP" \
+            Aprobacion_de_curso_training_model.ipynb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelos
+          path: training/models/*.joblib
+          if-no-files-found: error
+          retention-days: 7
+
+  test:
+    name: Pruebas (API, seguridad, UI, integración, ML, rendimiento)
+    needs: models
+    runs-on: ubuntu-latest
+    env:
+      COV_ARGS: --cov=src/proyecto_pruebas --cov-append --cov-report=
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelos
+          path: training/models
+
+      # Evita que un archivo de pruebas nuevo quede fuera de los pasos por tipo
+      - name: Verificar que cada archivo de pruebas tiene un paso asignado
+        run: |
+          esperados="test_api_m01.py test_api_m02.py test_api_m03.py test_security_routes.py
+            test_ui_views.py test_integration.py test_model_predictive_quality.py test_rendimiento.py"
+          for archivo in tests/test_*.py; do
+            nombre=$(basename "$archivo")
+            if ! grep -qw "$nombre" <<< "$esperados"; then
+              echo "::error file=$archivo::$nombre no está asignado a ningún paso de pruebas en ci.yml"
+              exit 1
+            fi
+          done
+
+      - name: Contrato API y validaciones (positivas, negativas, valores límite)
+        run: uv run pytest -v ${{ env.COV_ARGS }} tests/test_api_m01.py tests/test_api_m02.py tests/test_api_m03.py
+      - name: Seguridad básica y códigos HTTP
+        if: success() || failure()
+        run: uv run pytest -v ${{ env.COV_ARGS }} tests/test_security_routes.py
+      - name: Vistas de la interfaz (UI)
+        if: success() || failure()
+        run: uv run pytest -v ${{ env.COV_ARGS }} tests/test_ui_views.py
+      - name: Integración API → modelo → Supabase (incluye fail-soft)
+        if: success() || failure()
+        run: uv run pytest -v ${{ env.COV_ARGS }} tests/test_integration.py
+      - name: Calidad predictiva de los modelos ML (métricas y umbrales)
+        if: success() || failure()
+        run: uv run pytest -v ${{ env.COV_ARGS }} -rs tests/test_model_predictive_quality.py
+      - name: Rendimiento básico (p95 de tiempo de respuesta)
+        if: success() || failure()
+        run: uv run pytest -v ${{ env.COV_ARGS }} -s tests/test_rendimiento.py
+
+      - name: Reporte de cobertura combinado
+        if: success() || failure()
+        run: |
+          uv run coverage report -m
+          uv run coverage xml -o coverage.xml
+      - uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: cobertura
+          path: coverage.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  e2e:
+    name: Pruebas E2E (Playwright)
+    needs: models
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: ${{ env.UV_VERSION }}
+      - run: uv sync --frozen
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelos
+          path: training/models
+      - name: Instalar Chromium
+        run: uv run playwright install --with-deps chromium
+      - name: Ejecutar pruebas E2E
+        run: |
+          uv run pytest --e2e tests/e2e -v \
+            --html=test-results/reporte-e2e.html --self-contained-html \
+            --tracing=retain-on-failure \
+            --video=retain-on-failure \
+            --screenshot=only-on-failure \
+            --output=test-results/playwright
+      - name: Publicar reporte y evidencias E2E
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-e2e
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  build:
+    name: Construir imagen Docker
+    needs: [lint, test, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: env.ES_MAIN == 'true'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Fuera de main la imagen se construye para validar el Dockerfile, sin publicarse.
+      # latest es la que despliega Coolify; el sha permite volver a una versión anterior.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ env.ES_MAIN == 'true' }}
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Desplegar en Coolify
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      # Las versiones recientes de Coolify solo aceptan POST en /api/v1/deploy (GET responde 405)
+      - name: Desplegar en Coolify
+        env:
+          COOLIFY_WEBHOOK: ${{ secrets.COOLIFY_WEBHOOK }}
+          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error --max-time 60 \
+            --request POST "$COOLIFY_WEBHOOK" \
+            --header "Authorization: Bearer $COOLIFY_TOKEN"
