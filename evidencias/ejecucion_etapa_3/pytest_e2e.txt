@@ -1,0 +1,34 @@
+$ uv run pytest --e2e tests/e2e -v --html=reporte-e2e.html --self-contained-html --screenshot=on   # 2026-11-23 00:02 CST
+============================= test session starts ==============================
+platform darwin -- Python 3.13.15, pytest-9.1.1, pluggy-1.6.0 -- /Users/billo/Developer/proyecto-pruebas/.venv/bin/python3
+cachedir: .pytest_cache
+metadata: {'Python': '3.13.15', 'Platform': 'macOS-27.0.1-arm64-arm-64bit-Mach-O', 'Packages': {'pytest': '9.1.1', 'pluggy': '1.6.0'}, 'Plugins': {'cov': '7.1.0', 'metadata': '3.1.1', 'html': '4.2.0', 'playwright': '0.10.0', 'anyio': '4.15.1'}}
+rootdir: /Users/billo/Developer/proyecto-pruebas
+configfile: pyproject.toml
+plugins: cov-7.1.0, metadata-3.1.1, html-4.2.0, playwright-0.10.0, anyio-4.15.1
+collecting ... collected 15 items
+
+tests/e2e/test_errores_ui.py::test_muestra_los_errores_de_validacion_de_la_api[chromium] PASSED [  6%]
+tests/e2e/test_errores_ui.py::test_muestra_un_error_interno_del_servidor[chromium] PASSED [ 13%]
+tests/e2e/test_errores_ui.py::test_avisa_cuando_no_hay_conexion_con_la_api[chromium] PASSED [ 20%]
+tests/e2e/test_formularios.py::test_flujo_completo_m01[chromium] PASSED  [ 26%]
+tests/e2e/test_formularios.py::test_flujo_completo_m02[chromium] PASSED  [ 33%]
+tests/e2e/test_formularios.py::test_flujo_completo_m03[chromium] PASSED  [ 40%]
+tests/e2e/test_formularios.py::test_campos_obligatorios_marcan_error_y_bloquean_el_envio[chromium] PASSED [ 46%]
+tests/e2e/test_formularios.py::test_valor_fuera_de_rango_muestra_el_limite[chromium] PASSED [ 53%]
+tests/e2e/test_formularios.py::test_error_desaparece_al_corregir_el_campo[chromium] PASSED [ 60%]
+tests/e2e/test_movil.py::test_pestanas_agrupan_las_secciones[chromium] PASSED [ 66%]
+tests/e2e/test_movil.py::test_resultado_en_pantalla_aparte_y_recalculo[chromium] PASSED [ 73%]
+tests/e2e/test_movil.py::test_el_resumen_refleja_los_datos_ingresados[chromium] PASSED [ 80%]
+tests/e2e/test_navegacion.py::test_inicio_lista_los_tres_modelos[chromium] PASSED [ 86%]
+tests/e2e/test_navegacion.py::test_desde_inicio_se_abre_el_formulario_m01[chromium] PASSED [ 93%]
+tests/e2e/test_navegacion.py::test_volver_al_inicio_desde_un_formulario[chromium] PASSED [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.13/site-packages/fastapi/testclient.py:1
+  /Users/billo/Developer/proyecto-pruebas/.venv/lib/python3.13/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- Generated html report: file:///Users/billo/Developer/proyecto-pruebas/evidencias/ejecucion_etapa_3/reporte-e2e.html -
+======================== 15 passed, 1 warning in 16.68s ========================

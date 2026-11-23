@@ -231,3 +231,6 @@ vscode/
 training/models/*
 
 ~$*
+
+# macOS
+.DS_Store

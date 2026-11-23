@@ -84,7 +84,9 @@ def test_cp10_predict_m02_tipo_incorrecto_cadena(client: TestClient, valid_m02_p
     assert data["campo"] == "age"
 
 
-def test_cp11_predict_m02_tipo_incorrecto_booleano_en_entero(client: TestClient, valid_m02_payload: dict):
+def test_cp11_predict_m02_tipo_incorrecto_booleano_en_entero(
+    client: TestClient, valid_m02_payload: dict
+):
     """
     CP-11: Envío de booleano True en lugar de entero 1 en 'male'.
     Con strict=True en Pydantic no se permite coerción de boolean a int.
@@ -101,7 +103,8 @@ def test_cp11_predict_m02_tipo_incorrecto_booleano_en_entero(client: TestClient,
 
 def test_cp12_predict_m02_campo_adicional_no_permitido(client: TestClient, valid_m02_payload: dict):
     """
-    Validación de contrato estricto: campos desconocidos o adicionales no permitidos (extra='forbid').
+    Validación de contrato estricto: campos desconocidos o adicionales
+    no permitidos (extra='forbid').
     """
     payload = valid_m02_payload.copy()
     payload["campo_extra_no_valido"] = 12345

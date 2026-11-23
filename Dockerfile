@@ -14,6 +14,8 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN uv sync --frozen --no-dev --group jupyter --no-install-project
 
 COPY training/ training/
+# El cd es intencional: el cuaderno de M01 resuelve sus rutas relativas a training/notebooks
+# hadolint ignore=DL3003
 RUN uv run --no-sync python training/train_m02.py \
  && uv run --no-sync python training/notebooks/m03_riesgo_morosidad/entrenamiento.py \
  # El cuaderno usa rutas relativas a training/notebooks

@@ -63,6 +63,8 @@ Para M02 se establece como regla de validación que la edad debe ser un entero e
 | CP-26 | F13 | Consulta del historial | Existen registros previos | N/A | 1. Solicitar el historial de ejecuciones. | Se listan las ejecuciones almacenadas en el orden definido por el sistema. | Basada en riesgo | Funcional | Media |
 | CP-27 | F14 | Comportamiento con BD no disponible | Supabase desconectada intencionalmente | Solicitud de predicción válida | 1. Simular la indisponibilidad de Supabase. 2. Enviar una solicitud válida. 3. Observar respuesta y logs. | El comportamiento de la predicción y del guardado se maneja de acuerdo con la estrategia definida, sin caída no controlada del sistema. | Basada en riesgo | Negativa (confiabilidad) | Alta |
 | CP-28 | Usabilidad | Formulario claro para usuario nuevo | UI cargada | N/A | 1. Solicitar a un usuario sin instrucciones previas que complete el flujo de M02. 2. Observar el proceso. | El usuario logra completar y enviar una solicitud válida sin ayuda externa. | Basada en riesgo | No funcional (usabilidad) | Media |
+| CP-29 | F8, F9, F10 | Calidad predictiva mínima sobre el conjunto de prueba independiente | Modelos entrenados; CSV de prueba en `training/data/clean/<modelo>/1_curso/` | 79 registros de M01, 848 de M02 y 103 registros completos de M03 | 1. Enviar cada registro a `/predict/<modelo>`. 2. Validar contrato de salida por registro. 3. Calcular métricas agregadas. | Cada respuesta es HTTP 200 con clase válida y probabilidad en [0, 1]. M01: Accuracy ≥ 0.60, Recall ≥ 0.60, F1 ≥ 0.40. M02: MAE ≤ 12 mmHg, RMSE ≤ 16 mmHg, R² ≥ 0.50. M03: Accuracy ≥ 0.58, Recall ≥ 0.45, F1 ≥ 0.40. | Basada en riesgo / Partición de equivalencia (clases de salida) | ML (no funcional) | Alta |
+| CP-30 | RNF-03 | Tiempo de respuesta en escenario representativo | Modelos cargados; persistencia simulada | Payload válido de cada modelo | 1. Enviar 1 solicitud de calentamiento. 2. Enviar 20 solicitudes y medir cada una. | El percentil 95 de cada endpoint es menor que 500 ms. | Basada en riesgo | No funcional (rendimiento) | Media |
 
 ### 8.3. Datos de prueba
 
@@ -82,7 +84,7 @@ La selección de los datos se justifica mediante las técnicas de diseño aplica
 
 2. **Análisis de valores límite.** Se utiliza para detectar errores asociados con límites de rangos y condiciones de frontera. Se aplica especialmente a edad mínima/máxima, notas límite de aprobación del curso, ingresos declarados para el riesgo de morosidad y valores extremos de entrada. Produce CP-06, CP-07, CP-23 y CP-24.
 
-3. **Pruebas basadas en riesgo.** Se utilizan para priorizar funcionalidades cuyo fallo tendría un impacto relevante en la solución. Se aplican a contrato de API, seguridad, cálculo de los tres modelos, persistencia, historial y comportamiento ante indisponibilidad de la base de datos. Produce CP-08, CP-09, CP-13, CP-15 a CP-21 y CP-25 a CP-28.
+3. **Pruebas basadas en riesgo.** Se utilizan para priorizar funcionalidades cuyo fallo tendría un impacto relevante en la solución. Se aplican a contrato de API, seguridad, cálculo de los tres modelos, persistencia, historial y comportamiento ante indisponibilidad de la base de datos. Produce CP-08, CP-09, CP-13, CP-15 a CP-21 y CP-25 a CP-30.
 
 ### 8.5. Cobertura funcional
 
@@ -115,9 +117,10 @@ La cobertura negativa contempla entradas inválidas, campos faltantes, tipos inc
 
 | Categoría | ¿Aplica? | Justificación / caso asociado |
 |---|---|---|
-| Rendimiento básico | Sí (latencia por solicitud) | Se mide el tiempo de respuesta en escenarios representativos (registrado en `duracion_ms` por el middleware de logs), verificando respuestas inferiores a 100 ms en inferencia local. Las pruebas de estrés bajo concurrencia masiva quedan fuera de alcance. |
+| Rendimiento básico | Sí (latencia por solicitud) | CP-30 mide de forma automatizada el tiempo de respuesta en escenarios representativos (p95 < 500 ms); además, el middleware registra `duracion_ms` de cada solicitud real. Las pruebas de estrés bajo concurrencia masiva quedan fuera de alcance. |
 | Confiabilidad | Sí | CP-27 verifica el comportamiento *fail-soft* ante indisponibilidad de la base de datos Supabase. |
 | Seguridad | Sí | CP-16 y CP-17 verifican el rechazo de entradas maliciosas y la no exposición de stack traces, rutas internas o credenciales. |
 | Usabilidad | Sí | CP-28 evalúa manualmente la claridad de los formularios y mensajes de validación para un usuario nuevo. |
+| Calidad predictiva (ML) | Sí | CP-29 compara las métricas de cada modelo contra umbrales mínimos sobre su conjunto de prueba independiente. |
 | Mantenibilidad | Sí | El análisis estático con Pylint (calificación 10.00/10) y la arquitectura MVC aportan evidencia de mantenibilidad. |
 | Compatibilidad | Sí (responsividad básica) | Detección de dispositivos móviles (`es_movil`) y adaptación de columnas en la interfaz web. |

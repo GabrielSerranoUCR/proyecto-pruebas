@@ -1,5 +1,6 @@
 """
-Batería de pruebas automatizadas para la API del Modelo M03 (Riesgo de morosidad - Clasificación multiclase).
+Batería de pruebas automatizadas para la API del Modelo M03
+(Riesgo de morosidad - Clasificación multiclase).
 Cubre casos funcionales positivos para cada clase (bajo, medio, alto), negativos, valores extremos y
 verificación de exclusión de la variable dominante Credit_History.
 Curso: Pruebas de Software (CI0142)
